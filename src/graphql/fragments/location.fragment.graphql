@@ -1,0 +1,19 @@
+fragment LocationCard on Location {
+  id
+  name
+  description
+  address
+  latitude
+  longitude
+  category
+  images
+  averageRating
+  ratingCount
+  myRating
+  createdAt
+  createdBy {
+    id
+    username
+    avatarUrl
+  }
+}

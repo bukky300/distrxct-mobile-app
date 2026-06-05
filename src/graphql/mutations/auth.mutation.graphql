@@ -1,0 +1,19 @@
+#import "../fragments/user.fragment.graphql"
+
+mutation Login($input: LoginInput!) {
+  login(input: $input) {
+    token
+    user {
+      ...UserProfile
+    }
+  }
+}
+
+mutation Register($input: RegisterInput!) {
+  register(input: $input) {
+    token
+    user {
+      ...UserProfile
+    }
+  }
+}

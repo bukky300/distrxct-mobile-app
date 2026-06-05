@@ -1,0 +1,8 @@
+mutation RateLocation($input: RateLocationInput!) {
+  rateLocation(input: $input) {
+    id
+    score
+    comment
+    createdAt
+  }
+}

@@ -1,0 +1,150 @@
+scalar DateTime
+scalar UUID
+scalar Upload
+
+type Query {
+  locations(
+    first: Int
+    after: String
+    filter: LocationFilter
+    sortBy: LocationSortBy
+  ): LocationConnection!
+  location(id: UUID!): Location
+  me: User
+}
+
+type Mutation {
+  login(input: LoginInput!): AuthPayload!
+  register(input: RegisterInput!): AuthPayload!
+  createLocation(input: CreateLocationInput!): Location!
+  updateLocation(id: UUID!, input: UpdateLocationInput!): Location!
+  deleteLocation(id: UUID!): Boolean!
+  rateLocation(input: RateLocationInput!): Rating!
+  updateProfile(input: UpdateProfileInput!): User!
+}
+
+type LocationConnection {
+  edges: [LocationEdge!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type LocationEdge {
+  node: Location!
+  cursor: String!
+}
+
+type PageInfo {
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+  endCursor: String
+}
+
+type Location {
+  id: UUID!
+  name: String!
+  description: String
+  address: String
+  latitude: Float!
+  longitude: Float!
+  category: LocationCategory!
+  images: [String!]!
+  averageRating: Float
+  ratingCount: Int!
+  myRating: Int
+  createdBy: User!
+  createdAt: DateTime!
+  updatedAt: DateTime!
+}
+
+type User {
+  id: UUID!
+  username: String!
+  email: String!
+  avatarUrl: String
+  bio: String
+  locationCount: Int!
+  createdAt: DateTime!
+}
+
+type Rating {
+  id: UUID!
+  score: Int!
+  comment: String
+  createdBy: User!
+  location: Location!
+  createdAt: DateTime!
+}
+
+type AuthPayload {
+  token: String!
+  user: User!
+}
+
+enum LocationCategory {
+  NATURE
+  URBAN
+  HIDDEN_GEM
+  HISTORICAL
+  ART
+  FOOD
+  ADVENTURE
+  OTHER
+}
+
+enum LocationSortBy {
+  CREATED_AT_DESC
+  RATING_DESC
+  DISTANCE_ASC
+}
+
+input LocationFilter {
+  category: LocationCategory
+  minRating: Float
+  nearLat: Float
+  nearLng: Float
+  radiusKm: Float
+  searchQuery: String
+}
+
+input LoginInput {
+  email: String!
+  password: String!
+}
+
+input RegisterInput {
+  username: String!
+  email: String!
+  password: String!
+}
+
+input CreateLocationInput {
+  name: String!
+  description: String
+  address: String
+  latitude: Float!
+  longitude: Float!
+  category: LocationCategory!
+  images: [Upload!]
+}
+
+input UpdateLocationInput {
+  name: String
+  description: String
+  address: String
+  category: LocationCategory
+  images: [Upload!]
+}
+
+input RateLocationInput {
+  locationId: UUID!
+  score: Int!
+  comment: String
+}
+
+input UpdateProfileInput {
+  username: String
+  bio: String
+  avatar: Upload
+}

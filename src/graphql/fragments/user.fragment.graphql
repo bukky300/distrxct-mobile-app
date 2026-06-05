@@ -1,0 +1,9 @@
+fragment UserProfile on User {
+  id
+  username
+  email
+  avatarUrl
+  bio
+  locationCount
+  createdAt
+}

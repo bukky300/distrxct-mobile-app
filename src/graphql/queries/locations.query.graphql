@@ -1,0 +1,28 @@
+#import "../fragments/location.fragment.graphql"
+
+query GetLocations(
+  $first: Int
+  $after: String
+  $filter: LocationFilter
+  $sortBy: LocationSortBy
+) {
+  locations(first: $first, after: $after, filter: $filter, sortBy: $sortBy) {
+    edges {
+      node {
+        ...LocationCard
+      }
+      cursor
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    totalCount
+  }
+}
+
+query GetLocation($id: UUID!) {
+  location(id: $id) {
+    ...LocationCard
+  }
+}

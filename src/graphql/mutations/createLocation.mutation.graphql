@@ -1,0 +1,7 @@
+#import "../fragments/location.fragment.graphql"
+
+mutation CreateLocation($input: CreateLocationInput!) {
+  createLocation(input: $input) {
+    ...LocationCard
+  }
+}

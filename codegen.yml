@@ -1,0 +1,25 @@
+overwrite: true
+schema: 'src/graphql/schema.graphql'
+documents: 'src/graphql/**/*.graphql'
+generates:
+  src/graphql/generated/graphql.ts:
+    plugins:
+      - typescript
+    config:
+      scalars:
+        DateTime: string
+        Upload: File
+        UUID: string
+
+  src/graphql/generated/hooks.ts:
+    preset: import-types
+    presetConfig:
+      typesPath: './graphql'
+    plugins:
+      - typescript-operations
+      - typescript-react-apollo
+    config:
+      withHooks: true
+      withResultType: true
+      withMutationFn: true
+      reactApolloVersion: 3
