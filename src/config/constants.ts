@@ -1,7 +1,8 @@
 export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://api.distrxct.com/graphql';
 
 export const STORAGE_KEYS = {
-  AUTH_TOKEN: '@distrxct/auth_token',
+  ACCESS_TOKEN: '@distrxct/access_token',
+  REFRESH_TOKEN: '@distrxct/refresh_token',
   USER: '@distrxct/user',
 } as const;
 

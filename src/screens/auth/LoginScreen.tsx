@@ -10,10 +10,17 @@ import {
   Platform,
   ScrollView,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Eye, EyeOff } from 'lucide-react-native';
 import { AntDesign } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { AuthStackParamList } from '@navigation/types';
+import { useAuth } from '@features/auth/hooks/useAuth';
+
+type NavProp = NativeStackNavigationProp<AuthStackParamList>;
 
 const T = {
   green: '#2D6A2D',
@@ -24,10 +31,31 @@ const T = {
   inputBg: '#F5F5F5',
   white: '#FFFFFF',
   black: '#000000',
+  red: '#D32F2F',
 };
 
 export default function LoginScreen() {
+  const navigation = useNavigation<NavProp>();
+  const { login, loginLoading } = useAuth();
+
+  const [emailOrUsername, setEmailOrUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleLogin = async () => {
+    if (!emailOrUsername || !password) {
+      setError('Please enter your email and password.');
+      return;
+    }
+    try {
+      setError(null);
+      await login(emailOrUsername, password);
+    } catch (e) {
+      const err = e as { graphQLErrors?: { message?: string }[]; message?: string };
+      setError(err?.graphQLErrors?.[0]?.message ?? err?.message ?? 'Login failed. Please try again.');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -85,6 +113,8 @@ export default function LoginScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
+            value={emailOrUsername}
+            onChangeText={setEmailOrUsername}
           />
 
           {/* Password */}
@@ -95,6 +125,8 @@ export default function LoginScreen() {
               placeholder="* * * * * * * * * *"
               placeholderTextColor={T.placeholder}
               secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={setPassword}
             />
             <TouchableOpacity
               onPress={() => setShowPassword(v => !v)}
@@ -108,19 +140,35 @@ export default function LoginScreen() {
           </View>
 
           {/* Forgot */}
-          <TouchableOpacity style={styles.forgotRow} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.forgotRow}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('ForgotPassword')}
+          >
             <Text style={styles.forgotText}>Forgot password?</Text>
           </TouchableOpacity>
 
+          {/* Error */}
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
           {/* Sign in */}
-          <TouchableOpacity style={styles.primaryBtn} activeOpacity={0.85}>
-            <Text style={styles.primaryBtnText}>Sign in</Text>
+          <TouchableOpacity
+            style={[styles.primaryBtn, loginLoading && styles.primaryBtnDisabled]}
+            activeOpacity={0.85}
+            onPress={handleLogin}
+            disabled={loginLoading}
+          >
+            {loginLoading ? (
+              <ActivityIndicator color={T.white} />
+            ) : (
+              <Text style={styles.primaryBtnText}>Sign in</Text>
+            )}
           </TouchableOpacity>
 
           {/* Footer */}
           <View style={styles.footerRow}>
             <Text style={styles.footerText}>New to distrxct? </Text>
-            <TouchableOpacity activeOpacity={0.7}>
+            <TouchableOpacity activeOpacity={0.7} onPress={() => navigation.navigate('Register')}>
               <Text style={styles.footerLink}>Create Account</Text>
             </TouchableOpacity>
           </View>
@@ -203,6 +251,13 @@ const styles = StyleSheet.create({
   forgotRow: { alignItems: 'flex-end', marginBottom: 28 },
   forgotText: { fontSize: 13, color: T.green, fontFamily: 'Roboto_500Medium' },
 
+  errorText: {
+    fontSize: 13,
+    color: T.red,
+    marginBottom: 16,
+    fontFamily: 'Roboto_400Regular',
+  },
+
   // Primary button
   primaryBtn: {
     height: 52,
@@ -212,6 +267,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginBottom: 20,
   },
+  primaryBtnDisabled: { opacity: 0.6 },
   primaryBtnText: { fontSize: 16, fontWeight: '600', color: T.white, fontFamily: 'Roboto_500Medium' },
 
   // Footer

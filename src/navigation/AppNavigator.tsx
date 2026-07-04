@@ -1,45 +1,55 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
+
 import type { AppTabParamList } from './types';
-import LocationsStack from './LocationsStack';
-import ProfileStack from './ProfileStack';
-import MapScreen from '@screens/locations/MapScreen';
-import { colors } from '@config/theme';
+import HomeNavigator from './HomeNavigator';
+import ActivityScreen from '@screens/activity/ActivityScreen';
+import DiscoverNavigator from './DiscoverNavigator';
+import FriendsNavigator from './FriendsNavigator';
+import ProfileDrawer from '@features/profile/components/ProfileDrawer';
+import PostActivitySheet from '@features/posts/components/PostActivitySheet';
+import BottomTabBar from '@components/layout/BottomTabBar';
+import { useUIStore } from '@features/ui/store/uiStore';
+import { navigateToProfile } from './navigationRef';
 
 const Tab = createBottomTabNavigator<AppTabParamList>();
 
-export default function AppNavigator() {
+// ─── Navigator ────────────────────────────────────────────────────────────────
+
+interface Props {
+  initialRouteName?: keyof AppTabParamList;
+}
+
+export default function AppNavigator({ initialRouteName }: Props) {
+  const { postSheetOpen, closePostSheet } = useUIStore();
+
   return (
-    <Tab.Navigator
-      screenOptions={({ route }) => ({
-        tabBarIcon: ({ focused, color, size }) => {
-          const icons: Record<string, { active: keyof typeof Ionicons.glyphMap; inactive: keyof typeof Ionicons.glyphMap }> = {
-            Explore: { active: 'compass', inactive: 'compass-outline' },
-            Map: { active: 'map', inactive: 'map-outline' },
-            Profile: { active: 'person', inactive: 'person-outline' },
-          };
-          const icon = icons[route.name];
-          return (
-            <Ionicons
-              name={focused ? icon.active : icon.inactive}
-              size={size}
-              color={color}
-            />
-          );
-        },
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: {
-          backgroundColor: colors.surface,
-          borderTopColor: colors.border,
-        },
-        headerShown: false,
-      })}
-    >
-      <Tab.Screen name="Explore" component={LocationsStack} />
-      <Tab.Screen name="Map" component={MapScreen} />
-      <Tab.Screen name="Profile" component={ProfileStack} />
-    </Tab.Navigator>
+    <>
+      <Tab.Navigator
+        initialRouteName={initialRouteName}
+        tabBar={props => <BottomTabBar {...props} />}
+        screenOptions={{ headerShown: false }}
+      >
+        <Tab.Screen name="Home"     component={HomeNavigator} />
+        <Tab.Screen name="Activity" component={ActivityScreen} />
+        <Tab.Screen name="Discover" component={DiscoverNavigator} />
+        <Tab.Screen name="Friends"  component={FriendsNavigator} />
+      </Tab.Navigator>
+
+      {/* Global overlays */}
+      <ProfileDrawer
+        onNavigate={key => {
+          if (key === 'profile') navigateToProfile();
+        }}
+      />
+      <PostActivitySheet
+        visible={postSheetOpen}
+        onClose={closePostSheet}
+        onPost={data => {
+          // wire to mutation
+          closePostSheet();
+        }}
+      />
+    </>
   );
 }

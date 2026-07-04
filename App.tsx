@@ -2,6 +2,7 @@ import './global.css';
 import React, { useState, useEffect } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ApolloProvider } from '@apollo/client';
 import {
   useFonts,
   Roboto_400Regular,
@@ -9,6 +10,7 @@ import {
   Roboto_700Bold,
   Roboto_900Black,
 } from '@expo-google-fonts/roboto';
+import { apolloClient } from './src/apollo/client'; // direct path (App.tsx is outside src/)
 import SplashScreen from './src/screens/onboarding/SplashScreen';
 import DevPreview from './src/screens/dev/DevPreview';
 
@@ -36,8 +38,10 @@ export default function App() {
   }
 
   return (
-    <SafeAreaProvider>
-      {showSplash ? <SplashScreen /> : <DevPreview />}
-    </SafeAreaProvider>
+    <ApolloProvider client={apolloClient}>
+      <SafeAreaProvider>
+        {showSplash ? <SplashScreen /> : <DevPreview />}
+      </SafeAreaProvider>
+    </ApolloProvider>
   );
 }
