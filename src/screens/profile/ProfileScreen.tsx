@@ -8,6 +8,7 @@ import BusinessCard from '@features/discover/components/BusinessCard';
 import { MOCK_BUSINESSES } from '@features/discover/data/mockBusinesses';
 import type { BusinessReview } from '@features/discover/types';
 import PostCard, { type PostData } from '@features/posts/components/PostCard';
+import { navigateToSettings } from '@navigation/navigationRef';
 
 type ProfileTab = 'reviews' | 'activity' | 'collections';
 
@@ -111,6 +112,7 @@ export default function ProfileScreen() {
 
           <TouchableOpacity
             style={styles.settingsBtn}
+            onPress={navigateToSettings}
             activeOpacity={0.7}
             accessibilityRole="button"
             accessibilityLabel="Settings"

@@ -20,7 +20,9 @@ import HomeScreen from '../home/HomeScreen';
 import ActivityScreen from '../activity/ActivityScreen';
 import AppNavigator from '@navigation/AppNavigator';
 import AuthStack from '@navigation/AuthStack';
-import { navigationRef, navigateToProfile } from '@navigation/navigationRef';
+import SettingsNavigator from '@navigation/SettingsNavigator';
+import MessagesNavigator from '@navigation/MessagesNavigator';
+import { navigationRef, navigateToProfile, navigateToSettings, navigateToMessages } from '@navigation/navigationRef';
 
 // ─── New components ───────────────────────────────────────────────────────────
 import HomeSkeleton from '@components/ui/HomeSkeleton';
@@ -240,6 +242,22 @@ function ResetPasswordPreview() {
   );
 }
 
+function EmailVerifiedPreview() {
+  return (
+    <NavigationContainer independent>
+      <AuthStack initialRouteName="EmailVerified" />
+    </NavigationContainer>
+  );
+}
+
+function PasswordResetCompletePreview() {
+  return (
+    <NavigationContainer independent>
+      <AuthStack initialRouteName="PasswordResetComplete" />
+    </NavigationContainer>
+  );
+}
+
 function DiscoverFlowPreview() {
   return (
     <NavigationContainer independent ref={navigationRef}>
@@ -265,6 +283,48 @@ function ProfileFlowPreview() {
   return (
     <NavigationContainer independent ref={navigationRef}>
       <AppNavigator initialRouteName="Home" />
+    </NavigationContainer>
+  );
+}
+
+function SettingsFlowPreview() {
+  useEffect(() => {
+    const timer = setTimeout(() => navigateToSettings(), 50);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <NavigationContainer independent ref={navigationRef}>
+      <AppNavigator initialRouteName="Home" />
+    </NavigationContainer>
+  );
+}
+
+function NotificationsPreview() {
+  return (
+    <NavigationContainer independent>
+      <SettingsNavigator initialRouteName="Notifications" />
+    </NavigationContainer>
+  );
+}
+
+function MessagesFlowPreview() {
+  useEffect(() => {
+    const timer = setTimeout(() => navigateToMessages(), 50);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <NavigationContainer independent ref={navigationRef}>
+      <AppNavigator initialRouteName="Home" />
+    </NavigationContainer>
+  );
+}
+
+function ChatScreenPreview() {
+  return (
+    <NavigationContainer independent>
+      <MessagesNavigator initialRouteName="Chat" />
     </NavigationContainer>
   );
 }
@@ -345,6 +405,8 @@ const SCREENS: { label: string; group: string; component: React.ComponentType<an
   { group: 'Onboarding', label: 'Welcome',             component: WelcomeScreen },
   { group: 'Auth',       label: 'Auth Flow (Login / Register / Verify)', component: AuthFlowPreview },
   { group: 'Auth',       label: 'Reset Password',      component: ResetPasswordPreview },
+  { group: 'Auth',       label: 'Email Verified (post-web-verify)', component: EmailVerifiedPreview },
+  { group: 'Auth',       label: 'Password Reset Complete (post-web-reset)', component: PasswordResetCompletePreview },
   { group: 'Home',       label: 'Full App (Header + Tabs)', component: FullAppPreview },
   { group: 'Home',       label: 'Home Feed',           component: HomeScreen },
   { group: 'Home',       label: 'Activity Feed',        component: ActivityScreen },
@@ -356,6 +418,10 @@ const SCREENS: { label: string; group: string; component: React.ComponentType<an
   { group: 'Friends',    label: 'Friends Flow (Home + Profile)', component: FriendsFlowPreview },
   { group: 'Friends',    label: 'Followers List Sheet', component: FollowersListSheetPreview },
   { group: 'Profile',    label: 'Profile Flow (Tabs + Drawer)', component: ProfileFlowPreview },
+  { group: 'Settings',   label: 'Settings Flow (Account/Password/Preferences/Help/FAQ/Block list)', component: SettingsFlowPreview },
+  { group: 'Settings',   label: 'Notifications',       component: NotificationsPreview },
+  { group: 'Messages',   label: 'Messages Flow (List + Chat)', component: MessagesFlowPreview },
+  { group: 'Messages',   label: 'Chat Screen',          component: ChatScreenPreview },
   { group: 'Posts',      label: 'Post Action Menu',     component: PostActionMenuPreview },
   { group: 'Posts',      label: 'Post Activity Sheet',  component: PostActivitySheetPreview },
   { group: 'Posts',      label: 'Report Post Sheet',    component: ReportPostSheetPreview },
@@ -373,6 +439,8 @@ const GROUP_COLORS: Record<string, string> = {
   Discover:   '#C2410C',
   Friends:    '#1D4ED8',
   Profile:    '#BE185D',
+  Settings:   '#0369A1',
+  Messages:   '#7C2D12',
   Posts:      '#B45309',
   Reviews:    '#0F766E',
 };

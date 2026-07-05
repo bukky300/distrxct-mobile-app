@@ -19,6 +19,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '@navigation/types';
 import { useAuth } from '@features/auth/hooks/useAuth';
+import { isValidEmail } from '@utils/validators';
 
 type NavProp = NativeStackNavigationProp<AuthStackParamList>;
 
@@ -38,19 +39,25 @@ export default function LoginScreen() {
   const navigation = useNavigation<NavProp>();
   const { login, loginLoading } = useAuth();
 
-  const [emailOrUsername, setEmailOrUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const emailValid = isValidEmail(email);
+
   const handleLogin = async () => {
-    if (!emailOrUsername || !password) {
+    if (!email || !password) {
       setError('Please enter your email and password.');
+      return;
+    }
+    if (!emailValid) {
+      setError('Please enter a valid email address.');
       return;
     }
     try {
       setError(null);
-      await login(emailOrUsername, password);
+      await login(email, password);
     } catch (e) {
       const err = e as { graphQLErrors?: { message?: string }[]; message?: string };
       setError(err?.graphQLErrors?.[0]?.message ?? err?.message ?? 'Login failed. Please try again.');
@@ -80,6 +87,9 @@ export default function LoginScreen() {
             </View>
             <Text style={styles.logoText}>Distrxct</Text>
           </View>
+
+          {/* Error */}
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
           {/* Heading */}
           <Text style={styles.title}>Log in to your account</Text>
@@ -113,9 +123,12 @@ export default function LoginScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
             autoCorrect={false}
-            value={emailOrUsername}
-            onChangeText={setEmailOrUsername}
+            value={email}
+            onChangeText={setEmail}
           />
+          {email.length > 0 && !emailValid && (
+            <Text style={styles.fieldErrorText}>Please enter a valid email address.</Text>
+          )}
 
           {/* Password */}
           <Text style={styles.label}>Password</Text>
@@ -148,15 +161,14 @@ export default function LoginScreen() {
             <Text style={styles.forgotText}>Forgot password?</Text>
           </TouchableOpacity>
 
-          {/* Error */}
-          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+          
 
           {/* Sign in */}
           <TouchableOpacity
-            style={[styles.primaryBtn, loginLoading && styles.primaryBtnDisabled]}
+            style={[styles.primaryBtn, (loginLoading || !emailValid) && styles.primaryBtnDisabled]}
             activeOpacity={0.85}
             onPress={handleLogin}
-            disabled={loginLoading}
+            disabled={loginLoading || !emailValid}
           >
             {loginLoading ? (
               <ActivityIndicator color={T.white} />
@@ -255,6 +267,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: T.red,
     marginBottom: 16,
+    fontFamily: 'Roboto_400Regular',
+    textAlign: 'center',
+  },
+  fieldErrorText: {
+    fontSize: 12,
+    color: T.red,
+    marginTop: -12,
+    marginBottom: 20,
     fontFamily: 'Roboto_400Regular',
   },
 

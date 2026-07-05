@@ -12,6 +12,8 @@ export const linking: LinkingOptions<RootStackParamList> = {
           ForgotPassword: 'forgot-password',
           EmailVerification: 'verify-email/:token',
           ResetPassword: 'reset-password/:token',
+          EmailVerified: 'verified',
+          PasswordResetComplete: 'reset-complete',
         },
       },
       App: {

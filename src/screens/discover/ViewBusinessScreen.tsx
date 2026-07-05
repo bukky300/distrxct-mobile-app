@@ -21,7 +21,9 @@ import {
 import BusinessImageCarousel from '@features/discover/components/BusinessImageCarousel';
 import ReviewSummaryCard from '@features/discover/components/ReviewSummaryCard';
 import ReviewListItem from '@features/discover/components/ReviewListItem';
+import ReviewFormSheet from '@features/reviews/components/ReviewFormSheet';
 import { getBusinessById } from '@features/discover/data/mockBusinesses';
+import type { BusinessReview } from '@features/discover/types';
 import type { DiscoverStackParamList } from '@navigation/types';
 
 type Nav = NativeStackNavigationProp<DiscoverStackParamList>;
@@ -36,8 +38,25 @@ export default function ViewBusinessScreen() {
 
   const [descExpanded, setDescExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<'reviews' | 'activity'>('reviews');
+  const [reviewSheetVisible, setReviewSheetVisible] = useState(false);
+  const [reviews, setReviews] = useState<BusinessReview[]>(business?.reviews ?? []);
 
   if (!business) return null;
+
+  const handleSubmitReview = (data: { businessId: string; rating: number; title: string; body: string }) => {
+    setReviews(prev => [
+      {
+        id: `local-${Date.now()}`,
+        user: { name: 'You' },
+        timestamp: 'Just now',
+        rating: data.rating,
+        comment: data.title ? `${data.title}\n${data.body}` : data.body,
+        helpfulCount: 0,
+      },
+      ...prev,
+    ]);
+    setReviewSheetVisible(false);
+  };
 
   return (
     <View style={styles.root}>
@@ -137,7 +156,7 @@ export default function ViewBusinessScreen() {
         <View style={styles.section}>
           {activeTab === 'reviews' ? (
             <View style={{ gap: 12 }}>
-              {business.reviews.map(review => (
+              {reviews.map(review => (
                 <ReviewListItem key={review.id} review={review} />
               ))}
             </View>
@@ -150,11 +169,27 @@ export default function ViewBusinessScreen() {
       {/* Sticky write review button */}
       <TouchableOpacity
         style={[styles.writeReviewBtn, { bottom: insets.bottom + 78 }]}
+        onPress={() => setReviewSheetVisible(true)}
         activeOpacity={0.85}
       >
         <Text style={styles.writeReviewText}>Write review</Text>
         <PencilLine size={16} color="#FFFFFF" strokeWidth={2} />
       </TouchableOpacity>
+
+      <ReviewFormSheet
+        visible={reviewSheetVisible}
+        business={{
+          id: business.id,
+          name: business.name,
+          address: business.address,
+          isOpen: business.isOpen,
+          rating: business.rating,
+          ratingCount: business.ratingCount,
+        }}
+        onClose={() => setReviewSheetVisible(false)}
+        onBack={() => setReviewSheetVisible(false)}
+        onSubmit={handleSubmitReview}
+      />
     </View>
   );
 }

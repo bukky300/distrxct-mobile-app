@@ -10,7 +10,8 @@ import ProfileDrawer from '@features/profile/components/ProfileDrawer';
 import PostActivitySheet from '@features/posts/components/PostActivitySheet';
 import BottomTabBar from '@components/layout/BottomTabBar';
 import { useUIStore } from '@features/ui/store/uiStore';
-import { navigateToProfile } from './navigationRef';
+import { useAuth } from '@features/auth/hooks/useAuth';
+import { navigateToProfile, navigateToSettings, navigateToHelp } from './navigationRef';
 
 const Tab = createBottomTabNavigator<AppTabParamList>();
 
@@ -22,6 +23,7 @@ interface Props {
 
 export default function AppNavigator({ initialRouteName }: Props) {
   const { postSheetOpen, closePostSheet } = useUIStore();
+  const { logout } = useAuth();
 
   return (
     <>
@@ -40,7 +42,10 @@ export default function AppNavigator({ initialRouteName }: Props) {
       <ProfileDrawer
         onNavigate={key => {
           if (key === 'profile') navigateToProfile();
+          if (key === 'settings') navigateToSettings();
+          if (key === 'help') navigateToHelp();
         }}
+        onLogout={logout}
       />
       <PostActivitySheet
         visible={postSheetOpen}

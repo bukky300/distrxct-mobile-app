@@ -20,7 +20,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '@navigation/types';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import PasswordRequirements from '@features/auth/components/PasswordRequirements';
-import { isValidPassword } from '@utils/validators';
+import { isValidEmail, isValidPassword } from '@utils/validators';
 
 type NavProp = NativeStackNavigationProp<AuthStackParamList>;
 
@@ -71,14 +71,19 @@ export default function RegisterScreen() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const emailValid = isValidEmail(email);
   const passwordValid = isValidPassword(password);
   const passwordsMatch = password.length > 0 && password === confirmPassword;
   const canSubmit =
-    !!firstName && !!lastName && !!username && !!email && passwordValid && passwordsMatch && acceptedTerms;
+    !!firstName && !!lastName && !!username && emailValid && passwordValid && passwordsMatch && acceptedTerms;
 
   const handleRegister = async () => {
     if (!firstName || !lastName || !username || !email || !password) {
       setError('Please fill in all required fields.');
+      return;
+    }
+    if (!emailValid) {
+      setError('Please enter a valid email address.');
       return;
     }
     if (!passwordValid) {
@@ -212,6 +217,9 @@ export default function RegisterScreen() {
             value={email}
             onChangeText={setEmail}
           />
+          {email.length > 0 && !emailValid && (
+            <Text style={styles.matchErrorText}>Please enter a valid email address.</Text>
+          )}
 
           {/* Phone */}
           <Text style={styles.label}>Phone Number</Text>

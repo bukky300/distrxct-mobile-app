@@ -9,6 +9,8 @@ export type AuthStackParamList = {
   ForgotPassword: undefined;
   EmailVerification: { email?: string; token?: string };
   ResetPassword: { token?: string };
+  EmailVerified: undefined;
+  PasswordResetComplete: undefined;
 };
 
 export type AppTabParamList = {
@@ -21,6 +23,24 @@ export type AppTabParamList = {
 export type HomeStackParamList = {
   HomeHome: undefined;
   Profile: undefined;
+  Settings: undefined;
+  Messages: undefined;
+};
+
+export type MessagesStackParamList = {
+  MessagesHome: undefined;
+  Chat: { conversationId: string };
+};
+
+export type SettingsStackParamList = {
+  SettingsHome: undefined;
+  Account: undefined;
+  ChangePassword: undefined;
+  Preferences: undefined;
+  Help: undefined;
+  FAQ: undefined;
+  BlockList: undefined;
+  Notifications: undefined;
 };
 
 export type DiscoverStackParamList = {

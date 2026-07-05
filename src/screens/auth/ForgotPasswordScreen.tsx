@@ -17,6 +17,7 @@ import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '@navigation/types';
 import { useAuth } from '@features/auth/hooks/useAuth';
+import { isValidEmail } from '@utils/validators';
 
 type NavProp = NativeStackNavigationProp<AuthStackParamList>;
 
@@ -44,9 +45,15 @@ export default function ForgotPasswordScreen() {
   const [error, setError] = useState<string | null>(null);
   const [sentMessage, setSentMessage] = useState<string | null>(null);
 
+  const emailValid = isValidEmail(email);
+
   const handleSend = async () => {
     if (!email) {
       setError('Please enter your email.');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setError('Please enter a valid email address.');
       return;
     }
     try {
@@ -105,6 +112,9 @@ export default function ForgotPasswordScreen() {
             onChangeText={setEmail}
             editable={!sentMessage}
           />
+          {email.length > 0 && !emailValid && (
+            <Text style={styles.errorText}>Please enter a valid email address.</Text>
+          )}
 
           {/* Error / success */}
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -112,10 +122,13 @@ export default function ForgotPasswordScreen() {
 
           {/* Send button */}
           <TouchableOpacity
-            style={[styles.primaryBtn, (requestPasswordResetLoading || !!sentMessage) && styles.primaryBtnDisabled]}
+            style={[
+              styles.primaryBtn,
+              (requestPasswordResetLoading || !!sentMessage || !emailValid) && styles.primaryBtnDisabled,
+            ]}
             activeOpacity={0.85}
             onPress={handleSend}
-            disabled={requestPasswordResetLoading || !!sentMessage}
+            disabled={requestPasswordResetLoading || !!sentMessage || !emailValid}
           >
             {requestPasswordResetLoading ? (
               <ActivityIndicator color={T.white} />
