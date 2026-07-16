@@ -53,3 +53,12 @@ mutation ResetPassword($token: String!, $new_password: String!) {
 mutation ChangePassword($current_password: String!, $new_password: String!) {
   change_password(current_password: $current_password, new_password: $new_password)
 }
+
+mutation RefreshToken($refresh_token: String!) {
+  refresh_token(refresh_token: $refresh_token) {
+    access_token
+    refresh_token
+    expires_in
+    token_type
+  }
+}

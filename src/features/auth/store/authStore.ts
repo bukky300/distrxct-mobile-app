@@ -14,6 +14,9 @@ export interface CurrentUser {
 interface AuthTokens {
   accessToken: string;
   refreshToken: string;
+  // Omit when the caller has already persisted the expiry itself (e.g. register(),
+  // ahead of verifyEmail() later calling setAuth for the same token pair).
+  expiresIn?: number;
 }
 
 interface AuthState {
@@ -34,11 +37,15 @@ export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
 
   setAuth: async (tokens, user) => {
-    await Promise.all([
+    const writes = [
       storage.set(STORAGE_KEYS.ACCESS_TOKEN, tokens.accessToken),
       storage.set(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken),
       storage.set(STORAGE_KEYS.USER, user),
-    ]);
+    ];
+    if (tokens.expiresIn != null) {
+      writes.push(storage.set(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES_AT, Date.now() + tokens.expiresIn * 1000));
+    }
+    await Promise.all(writes);
     set({ accessToken: tokens.accessToken, refreshToken: tokens.refreshToken, user, isAuthenticated: true });
   },
 
@@ -48,6 +55,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     await Promise.all([
       storage.remove(STORAGE_KEYS.ACCESS_TOKEN),
       storage.remove(STORAGE_KEYS.REFRESH_TOKEN),
+      storage.remove(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES_AT),
       storage.remove(STORAGE_KEYS.USER),
     ]);
     await apolloClient.resetStore();

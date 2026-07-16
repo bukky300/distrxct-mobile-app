@@ -1,9 +1,8 @@
 import { setContext } from '@apollo/client/link/context';
-import { storage } from '@utils/storage';
-import { STORAGE_KEYS } from '@config/constants';
+import { ensureValidAccessToken } from '../tokenRefresh';
 
 export const authLink = setContext(async (_, { headers }) => {
-  const token = await storage.get<string>(STORAGE_KEYS.ACCESS_TOKEN);
+  const token = await ensureValidAccessToken();
   return {
     headers: {
       ...headers,

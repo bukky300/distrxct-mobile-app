@@ -150,12 +150,15 @@ export function useAuth() {
       variables: { email_or_username: emailOrUsername, password },
     });
     if (data?.login) {
-      const { access_token, refresh_token } = data.login;
+      const { access_token, refresh_token, expires_in } = data.login;
       // Save token first so authLink can use it for the me query
       await storage.set(STORAGE_KEYS.ACCESS_TOKEN, access_token);
       const { data: meData } = await apolloClient.query({ query: GET_ME, fetchPolicy: 'network-only' });
       if (meData?.me) {
-        await setAuth({ accessToken: access_token, refreshToken: refresh_token }, toCurrentUser(meData.me));
+        await setAuth(
+          { accessToken: access_token, refreshToken: refresh_token, expiresIn: expires_in },
+          toCurrentUser(meData.me),
+        );
       }
     }
   };
@@ -163,12 +166,14 @@ export function useAuth() {
   const register = async (input: RegisterInput) => {
     const { data } = await registerMutation({ variables: { input } });
     if (!data?.register) throw new Error('Registration failed. Please try again.');
-    const { access_token, refresh_token } = data.register;
+    const { access_token, refresh_token, expires_in } = data.register;
     // Stash tokens without marking the user authenticated — they're promoted to a
     // real session once verify_email succeeds, so RootNavigator keeps showing AuthStack
-    // until then.
+    // until then. Expiry is persisted now since setAuth (called later, from verifyEmail)
+    // won't have expires_in for this same token pair.
     await storage.set(STORAGE_KEYS.ACCESS_TOKEN, access_token);
     await storage.set(STORAGE_KEYS.REFRESH_TOKEN, refresh_token);
+    await storage.set(STORAGE_KEYS.ACCESS_TOKEN_EXPIRES_AT, Date.now() + expires_in * 1000);
   };
 
   const verifyEmail = async (token: string): Promise<EmailVerificationResult> => {

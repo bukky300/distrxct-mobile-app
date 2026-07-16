@@ -3,6 +3,7 @@ export const API_URL = process.env.EXPO_PUBLIC_API_URL ?? 'https://api.distrxct.
 export const STORAGE_KEYS = {
   ACCESS_TOKEN: '@distrxct/access_token',
   REFRESH_TOKEN: '@distrxct/refresh_token',
+  ACCESS_TOKEN_EXPIRES_AT: '@distrxct/access_token_expires_at',
   USER: '@distrxct/user',
 } as const;
 
