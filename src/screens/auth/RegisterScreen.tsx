@@ -13,7 +13,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Eye, EyeOff, ChevronDown } from 'lucide-react-native';
+import { Eye, EyeOff, ChevronDown, Check } from 'lucide-react-native';
 import { AntDesign } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -22,8 +22,15 @@ import { useAuth } from '@features/auth/hooks/useAuth';
 import PasswordRequirements from '@features/auth/components/PasswordRequirements';
 import { isValidEmail, isValidPassword } from '@utils/validators';
 import { useUIStore } from '@features/ui/store/uiStore';
+import BottomSheet from '@components/ui/BottomSheet';
 
 type NavProp = NativeStackNavigationProp<AuthStackParamList>;
+
+const GENDER_OPTIONS = [
+  { value: 'male', label: 'Male' },
+  { value: 'female', label: 'Female' },
+  { value: 'other', label: 'Other' },
+] as const;
 
 const T = {
   green: '#2D6A2D',
@@ -65,6 +72,8 @@ export default function RegisterScreen() {
   const [lastName, setLastName] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
+  const [gender, setGender] = useState('');
+  const [genderPickerVisible, setGenderPickerVisible] = useState(false);
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -74,13 +83,14 @@ export default function RegisterScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const emailValid = isValidEmail(email);
+  const selectedGenderLabel = GENDER_OPTIONS.find(o => o.value === gender)?.label;
   const passwordValid = isValidPassword(password);
   const passwordsMatch = password.length > 0 && password === confirmPassword;
   const canSubmit =
-    !!firstName && !!lastName && !!username && emailValid && passwordValid && passwordsMatch && acceptedTerms;
+    !!firstName && !!lastName && !!username && emailValid && !!gender && passwordValid && passwordsMatch && acceptedTerms;
 
   const handleRegister = async () => {
-    if (!firstName || !lastName || !username || !email || !password) {
+    if (!firstName || !lastName || !username || !email || !gender || !password) {
       setError('Please fill in all required fields.');
       return;
     }
@@ -107,6 +117,7 @@ export default function RegisterScreen() {
         last_name: lastName,
         username,
         email,
+        gender,
         password,
         accepted_terms: true,
         phone_number: phone || null,
@@ -223,6 +234,19 @@ export default function RegisterScreen() {
             <Text style={styles.matchErrorText}>Please enter a valid email address.</Text>
           )}
 
+          {/* Gender */}
+          <Text style={styles.label}>Gender</Text>
+          <TouchableOpacity
+            style={styles.selectInput}
+            activeOpacity={0.7}
+            onPress={() => setGenderPickerVisible(true)}
+          >
+            <Text style={gender ? styles.selectValueText : styles.selectPlaceholderText}>
+              {selectedGenderLabel ?? 'Select gender'}
+            </Text>
+            <ChevronDown size={16} color={T.gray} />
+          </TouchableOpacity>
+
           {/* Phone */}
           <Text style={styles.label}>Phone Number</Text>
           <View style={styles.phoneRow}>
@@ -335,6 +359,24 @@ export default function RegisterScreen() {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <BottomSheet visible={genderPickerVisible} onClose={() => setGenderPickerVisible(false)}>
+        <Text style={styles.sheetTitle}>Select gender</Text>
+        {GENDER_OPTIONS.map(option => (
+          <TouchableOpacity
+            key={option.value}
+            style={styles.sheetRow}
+            activeOpacity={0.7}
+            onPress={() => {
+              setGender(option.value);
+              setGenderPickerVisible(false);
+            }}
+          >
+            <Text style={styles.sheetRowText}>{option.label}</Text>
+            {gender === option.value && <Check size={18} color={T.green} strokeWidth={2.5} />}
+          </TouchableOpacity>
+        ))}
+      </BottomSheet>
     </SafeAreaView>
   );
 }
@@ -411,6 +453,36 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     fontFamily: 'Roboto_400Regular',
   },
+  selectInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    height: 48,
+    backgroundColor: T.inputBg,
+    borderRadius: 12,
+    paddingHorizontal: 16,
+    marginBottom: 20,
+  },
+  selectValueText: { fontSize: 14, color: T.black, fontFamily: 'Roboto_400Regular' },
+  selectPlaceholderText: { fontSize: 14, color: T.placeholder, fontFamily: 'Roboto_400Regular' },
+  sheetTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: T.black,
+    fontFamily: 'Roboto_700Bold',
+    paddingHorizontal: 20,
+    marginBottom: 12,
+  },
+  sheetRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderTopColor: T.inputBg,
+  },
+  sheetRowText: { fontSize: 15, color: T.black, fontFamily: 'Roboto_400Regular' },
   nameRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
   nameInput: {
     flex: 1,
