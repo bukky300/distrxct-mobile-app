@@ -21,6 +21,7 @@ import type { AuthStackParamList } from '@navigation/types';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import PasswordRequirements from '@features/auth/components/PasswordRequirements';
 import { isValidEmail, isValidPassword } from '@utils/validators';
+import { useUIStore } from '@features/ui/store/uiStore';
 
 type NavProp = NativeStackNavigationProp<AuthStackParamList>;
 
@@ -58,6 +59,7 @@ const LOGO_CLIP_H = LOGO_FULL_H * (62 / 86);
 export default function RegisterScreen() {
   const navigation = useNavigation<NavProp>();
   const { register, registerLoading } = useAuth();
+  const openDevPreview = useUIStore(s => s.openDevPreview);
 
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
@@ -322,6 +324,15 @@ export default function RegisterScreen() {
               <Text style={styles.primaryBtnText}>Sign Up</Text>
             )}
           </TouchableOpacity>
+
+          {/* Dev-only shortcut to the component/screen preview */}
+          <TouchableOpacity
+            style={styles.devLinkRow}
+            activeOpacity={0.7}
+            onPress={openDevPreview}
+          >
+            <Text style={styles.devLinkText}>Dev Preview</Text>
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -484,4 +495,8 @@ const styles = StyleSheet.create({
   },
   primaryBtnDisabled: { opacity: 0.6 },
   primaryBtnText: { fontSize: 16, fontWeight: '600', color: T.white, fontFamily: 'Roboto_500Medium' },
+
+  // Dev
+  devLinkRow: { alignItems: 'center', marginTop: 20 },
+  devLinkText: { fontSize: 12, color: T.gray, fontFamily: 'Roboto_400Regular', textDecorationLine: 'underline' },
 });

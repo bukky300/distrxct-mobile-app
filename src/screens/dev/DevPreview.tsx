@@ -14,7 +14,6 @@ import { ChevronRight, X, Plus } from 'lucide-react-native';
 
 // ─── Full screens ─────────────────────────────────────────────────────────────
 import SplashScreen from '../onboarding/SplashScreen';
-import WelcomeScreen from '../onboarding/WelcomeScreen';
 import ResetPasswordScreen from '../auth/ResetPasswordScreen';
 import HomeScreen from '../home/HomeScreen';
 import ActivityScreen from '../activity/ActivityScreen';
@@ -226,6 +225,14 @@ function AuthFlowPreview() {
   );
 }
 
+function WelcomePreview() {
+  return (
+    <NavigationContainer independent>
+      <AuthStack initialRouteName="Welcome" />
+    </NavigationContainer>
+  );
+}
+
 const ResetPasswordPreviewStack = createNativeStackNavigator();
 
 function ResetPasswordPreview() {
@@ -402,7 +409,7 @@ function FullAppPreview() {
 // ─── Screen registry ─────────────────────────────────────────────────────────
 const SCREENS: { label: string; group: string; component: React.ComponentType<any> }[] = [
   { group: 'Onboarding', label: 'Splash',              component: SplashScreen },
-  { group: 'Onboarding', label: 'Welcome',             component: WelcomeScreen },
+  { group: 'Onboarding', label: 'Welcome',             component: WelcomePreview },
   { group: 'Auth',       label: 'Auth Flow (Login / Register / Verify)', component: AuthFlowPreview },
   { group: 'Auth',       label: 'Reset Password',      component: ResetPasswordPreview },
   { group: 'Auth',       label: 'Email Verified (post-web-verify)', component: EmailVerifiedPreview },
@@ -445,7 +452,11 @@ const GROUP_COLORS: Record<string, string> = {
   Reviews:    '#0F766E',
 };
 
-export default function DevPreview() {
+interface Props {
+  onExit?: () => void;
+}
+
+export default function DevPreview({ onExit }: Props) {
   const [active, setActive] = useState<React.ComponentType<any> | null>(null);
   const [activeLabel, setActiveLabel] = useState('');
 
@@ -471,8 +482,18 @@ export default function DevPreview() {
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Screen Preview</Text>
-        <Text style={styles.headerSub}>{SCREENS.length} screens</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View>
+            <Text style={styles.headerTitle}>Screen Preview</Text>
+            <Text style={styles.headerSub}>{SCREENS.length} screens</Text>
+          </View>
+          {onExit && (
+            <TouchableOpacity style={styles.exitPill} onPress={onExit} activeOpacity={0.85}>
+              <X size={14} color="#fff" />
+              <Text style={styles.backPillText}>Back to app</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.list} showsVerticalScrollIndicator={false}>
@@ -545,4 +566,13 @@ const styles = StyleSheet.create({
     borderRadius: 99,
   },
   backPillText: { fontSize: 13, color: '#fff', fontWeight: '500', fontFamily: 'Roboto_500Medium' },
+  exitPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 99,
+  },
 });

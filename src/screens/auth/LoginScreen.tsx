@@ -20,6 +20,7 @@ import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { AuthStackParamList } from '@navigation/types';
 import { useAuth } from '@features/auth/hooks/useAuth';
 import { isValidEmail } from '@utils/validators';
+import { useUIStore } from '@features/ui/store/uiStore';
 
 type NavProp = NativeStackNavigationProp<AuthStackParamList>;
 
@@ -38,6 +39,7 @@ const T = {
 export default function LoginScreen() {
   const navigation = useNavigation<NavProp>();
   const { login, loginLoading } = useAuth();
+  const openDevPreview = useUIStore(s => s.openDevPreview);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -184,6 +186,15 @@ export default function LoginScreen() {
               <Text style={styles.footerLink}>Create Account</Text>
             </TouchableOpacity>
           </View>
+
+          {/* Dev-only shortcut to the component/screen preview */}
+          <TouchableOpacity
+            style={styles.devLinkRow}
+            activeOpacity={0.7}
+            onPress={openDevPreview}
+          >
+            <Text style={styles.devLinkText}>Dev Preview</Text>
+          </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -294,4 +305,8 @@ const styles = StyleSheet.create({
   footerRow: { flexDirection: 'row', alignItems: 'center' },
   footerText: { fontSize: 14, color: T.gray, fontFamily: 'Roboto_400Regular' },
   footerLink: { fontSize: 14, fontWeight: '700', color: T.green, fontFamily: 'Roboto_700Bold' },
+
+  // Dev
+  devLinkRow: { alignItems: 'center', marginTop: 24 },
+  devLinkText: { fontSize: 12, color: T.gray, fontFamily: 'Roboto_400Regular', textDecorationLine: 'underline' },
 });

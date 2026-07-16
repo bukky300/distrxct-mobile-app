@@ -13,9 +13,15 @@ import {
 import { apolloClient } from './src/apollo/client'; // direct path (App.tsx is outside src/)
 import SplashScreen from './src/screens/onboarding/SplashScreen';
 import DevPreview from './src/screens/dev/DevPreview';
+import RootNavigator from './src/navigation/RootNavigator';
+import { useUIStore } from './src/features/ui/store/uiStore';
+import { useAuthStore } from './src/features/auth/store/authStore';
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
+  const devPreviewOpen = useUIStore(s => s.devPreviewOpen);
+  const closeDevPreview = useUIStore(s => s.closeDevPreview);
+  const hydrate = useAuthStore(s => s.hydrate);
 
   const [fontsLoaded] = useFonts({
     Roboto_400Regular,
@@ -25,6 +31,7 @@ export default function App() {
   });
 
   useEffect(() => {
+    hydrate();
     const timer = setTimeout(() => setShowSplash(false), 2000);
     return () => clearTimeout(timer);
   }, []);
@@ -40,7 +47,13 @@ export default function App() {
   return (
     <ApolloProvider client={apolloClient}>
       <SafeAreaProvider>
-        {showSplash ? <SplashScreen /> : <DevPreview />}
+        {showSplash ? (
+          <SplashScreen />
+        ) : devPreviewOpen ? (
+          <DevPreview onExit={closeDevPreview} />
+        ) : (
+          <RootNavigator />
+        )}
       </SafeAreaProvider>
     </ApolloProvider>
   );

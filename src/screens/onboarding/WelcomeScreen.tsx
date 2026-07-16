@@ -8,10 +8,17 @@ import {
   Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { AuthStackParamList } from '@navigation/types';
 
 const { width } = Dimensions.get('window');
 
+type NavProp = NativeStackNavigationProp<AuthStackParamList>;
+
 export default function WelcomeScreen() {
+  const navigation = useNavigation<NavProp>();
+
   return (
     <SafeAreaView style={styles.container}>
       {/* Title row — text left, shapes top-right */}
@@ -37,7 +44,11 @@ export default function WelcomeScreen() {
 
       {/* CTA button */}
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.button} activeOpacity={0.85}>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => navigation.navigate('Register')}
+          activeOpacity={0.85}
+        >
           <Text style={styles.buttonText}>Get started</Text>
         </TouchableOpacity>
       </View>
