@@ -1,9 +1,27 @@
 import { useMutation } from '@apollo/client';
 import { gql } from '@apollo/client';
-import { useAuthStore } from '../store/authStore';
+import { useAuthStore, type CurrentUser } from '../store/authStore';
 import { storage } from '@utils/storage';
 import { STORAGE_KEYS } from '@config/constants';
 import { apolloClient } from '@/apollo/client';
+
+interface RawMeResponse {
+  id: string;
+  username: string;
+  email: string;
+  bio?: string | null;
+  profile_picture?: { thumbnail?: string | null } | null;
+}
+
+function toCurrentUser(me: RawMeResponse): CurrentUser {
+  return {
+    id: me.id,
+    username: me.username,
+    email: me.email,
+    bio: me.bio,
+    avatarUrl: me.profile_picture?.thumbnail ?? null,
+  };
+}
 
 const LOGIN_MUTATION = gql`
   mutation Login($email_or_username: String!, $password: String!) {
@@ -81,8 +99,10 @@ const GET_ME = gql`
       id
       username
       email
-      avatarUrl
       bio
+      profile_picture {
+        thumbnail
+      }
     }
   }
 `;
@@ -135,7 +155,7 @@ export function useAuth() {
       await storage.set(STORAGE_KEYS.ACCESS_TOKEN, access_token);
       const { data: meData } = await apolloClient.query({ query: GET_ME, fetchPolicy: 'network-only' });
       if (meData?.me) {
-        await setAuth({ accessToken: access_token, refreshToken: refresh_token }, meData.me);
+        await setAuth({ accessToken: access_token, refreshToken: refresh_token }, toCurrentUser(meData.me));
       }
     }
   };
@@ -164,7 +184,7 @@ export function useAuth() {
       if (accessToken && refreshToken) {
         const { data: meData } = await apolloClient.query({ query: GET_ME, fetchPolicy: 'network-only' });
         if (meData?.me) {
-          await setAuth({ accessToken, refreshToken }, meData.me);
+          await setAuth({ accessToken, refreshToken }, toCurrentUser(meData.me));
         }
       }
     }
