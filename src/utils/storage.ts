@@ -1,8 +1,8 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as SecureStore from 'expo-secure-store';
 
 export const storage = {
   async get<T>(key: string): Promise<T | null> {
-    const raw = await AsyncStorage.getItem(key);
+    const raw = await SecureStore.getItemAsync(key);
     if (!raw) return null;
     try {
       return JSON.parse(raw) as T;
@@ -13,14 +13,10 @@ export const storage = {
 
   async set(key: string, value: unknown): Promise<void> {
     const raw = typeof value === 'string' ? value : JSON.stringify(value);
-    await AsyncStorage.setItem(key, raw);
+    await SecureStore.setItemAsync(key, raw);
   },
 
   async remove(key: string): Promise<void> {
-    await AsyncStorage.removeItem(key);
-  },
-
-  async clear(): Promise<void> {
-    await AsyncStorage.clear();
+    await SecureStore.deleteItemAsync(key);
   },
 };

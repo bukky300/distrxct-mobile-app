@@ -50,10 +50,8 @@ export default function AppNavigator({ initialRouteName }: Props) {
       <PostActivitySheet
         visible={postSheetOpen}
         onClose={closePostSheet}
-        onPost={data => {
-          // wire to mutation
-          closePostSheet();
-        }}
+        // Hook point for the feed once it exists: refetch/cache-update with the new post here.
+        onPosted={() => {}}
       />
     </>
   );

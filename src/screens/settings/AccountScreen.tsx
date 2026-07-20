@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView, Platform, Keyboard
 import { Pencil, ImageIcon, Plus, LocateFixed } from 'lucide-react-native';
 import TopNav from '@components/layout/TopNav';
 import SettingsHeader from '@features/settings/components/SettingsHeader';
+import DetectLocationSheet from '@features/discover/components/DetectLocationSheet';
 
 interface FieldRowProps {
   label: string;
@@ -59,6 +60,7 @@ export default function AccountScreen() {
   const [username, setUsername] = useState('Ologwu');
   const [phone, setPhone] = useState('09086543234');
   const [location, setLocation] = useState('Rivers, Nigeria');
+  const [locationSheetVisible, setLocationSheetVisible] = useState(false);
   const email = 'Ogbonnasamuel67@gmail.com';
 
   return (
@@ -116,13 +118,23 @@ export default function AccountScreen() {
                 onChangeText={setLocation}
                 className="flex-1 font-roboto text-base text-[#1A1A1A]"
               />
-              <TouchableOpacity activeOpacity={0.7} hitSlop={8}>
+              <TouchableOpacity
+                activeOpacity={0.7}
+                hitSlop={8}
+                onPress={() => setLocationSheetVisible(true)}
+              >
                 <LocateFixed size={18} color="#2A5C40" strokeWidth={2} />
               </TouchableOpacity>
             </View>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      <DetectLocationSheet
+        visible={locationSheetVisible}
+        onClose={() => setLocationSheetVisible(false)}
+        onSelectLocation={setLocation}
+      />
     </View>
   );
 }

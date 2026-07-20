@@ -75,7 +75,7 @@ function PostActivitySheetPreview({ onDone }: { onDone: () => void }) {
       <PostActivitySheet
         visible={open}
         onClose={() => { setOpen(false); onDone(); }}
-        onPost={data => { alert(`Post: ${data.title}`); setOpen(false); onDone(); }}
+        onPosted={post => { alert(`Post: ${post.post_title}`); setOpen(false); onDone(); }}
       />
     </View>
   );

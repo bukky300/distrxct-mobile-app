@@ -24,6 +24,7 @@ import {
   HelpCircle,
   LogOut,
   ArrowUpRight,
+  Code,
 } from 'lucide-react-native';
 import { useUIStore } from '@features/ui/store/uiStore';
 
@@ -45,8 +46,9 @@ const PRIMARY_ITEMS = [
 ] as const;
 
 const SECONDARY_ITEMS = [
-  { icon: HelpCircle, label: 'Help',    key: 'help' },
-  { icon: LogOut,     label: 'Log out', key: 'logout' },
+  { icon: HelpCircle, label: 'Help',        key: 'help' },
+  { icon: Code,       label: 'Dev Preview', key: 'dev-preview' },
+  { icon: LogOut,     label: 'Log out',     key: 'logout' },
 ] as const;
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -57,7 +59,7 @@ interface Props {
 }
 
 export default function ProfileDrawer({ onNavigate, onLogout }: Props) {
-  const { profileDrawerOpen, closeProfileDrawer } = useUIStore();
+  const { profileDrawerOpen, closeProfileDrawer, openDevPreview } = useUIStore();
   const [mounted, setMounted] = useState(false);
   const insets = useSafeAreaInsets();
 
@@ -153,6 +155,7 @@ export default function ProfileDrawer({ onNavigate, onLogout }: Props) {
                 onPress={() => {
                   closeProfileDrawer();
                   if (key === 'logout') onLogout?.();
+                  else if (key === 'dev-preview') openDevPreview();
                   else onNavigate?.(key);
                 }}
                 activeOpacity={0.7}

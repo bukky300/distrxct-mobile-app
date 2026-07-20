@@ -1,64 +1,142 @@
-import React from 'react';
-import { View, Text, ScrollView, StyleSheet } from 'react-native';
+import React, { useCallback, useRef } from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  RefreshControl,
+  TouchableOpacity,
+  StyleSheet,
+  type ViewToken,
+} from 'react-native';
 import TopNav from '@components/layout/TopNav';
 import HeroBanner from '@features/home/components/HeroBanner';
-import PostCard, { type PostData } from '@features/posts/components/PostCard';
+import FeedPostCard from '@features/posts/components/FeedPostCard';
+import FeedPostCardSkeleton from '@features/posts/components/FeedPostCardSkeleton';
+import HomeSkeleton from '@components/ui/HomeSkeleton';
+import { useFeed } from '@features/posts/hooks/useFeed';
+import { useMarkPostsSeen } from '@features/posts/hooks/useMarkPostsSeen';
+import { useUIStore } from '@features/ui/store/uiStore';
+import { useAuthStore } from '@features/auth/store/authStore';
+import { navigateToDiscover } from '@navigation/navigationRef';
+import type { Post } from '@features/posts/types';
 
-// ─── Mock data — replace with API call ───────────────────────────────────────
-const MOCK_POSTS: PostData[] = [
-  {
-    id: '1',
-    type: 'post',
-    user: { name: 'Larry_o9' },
-    timestamp: '23 hrs ago',
-    title: 'My first Post',
-    body: 'Getting to know Distrxct',
-    imageUri: 'https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?w=800',
-    helpfulCount: 21,
-    commentCount: 5,
-    isOwner: false,
-  },
-  {
-    id: '2',
-    type: 'post',
-    user: { name: 'Tunde_Lagos' },
-    timestamp: '1 day ago',
-    title: 'Great weekend',
-    body: 'Spent an amazing afternoon at the beach with friends!',
-    imageUri: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800',
-    helpfulCount: 14,
-    commentCount: 3,
-    isOwner: false,
-  },
-];
-
-// ─── Screen ───────────────────────────────────────────────────────────────────
+const VIEWABILITY_CONFIG = { itemVisiblePercentThreshold: 60 };
+const DWELL_MS = 1000;
 
 export default function HomeScreen() {
+  const isAuthenticated = useAuthStore(s => s.isAuthenticated);
+  const openPostSheet = useUIStore(s => s.openPostSheet);
+  const { posts, loading, refreshing, fetchingMore, error, loadMore, onRefresh } = useFeed('HOME');
+  const { markSeen } = useMarkPostsSeen();
+
+  const dwellTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+
+  const onViewableItemsChanged = useCallback(
+    ({ changed }: { changed: ViewToken[] }) => {
+      const timers = dwellTimersRef.current;
+      changed.forEach(({ item, isViewable }) => {
+        const postId = (item as Post).id;
+        if (isViewable) {
+          if (timers.has(postId)) return;
+          timers.set(
+            postId,
+            setTimeout(() => {
+              timers.delete(postId);
+              markSeen(postId);
+            }, DWELL_MS),
+          );
+        } else {
+          const timer = timers.get(postId);
+          if (timer) {
+            clearTimeout(timer);
+            timers.delete(postId);
+          }
+        }
+      });
+    },
+    [markSeen],
+  );
+
+  if (!isAuthenticated) {
+    return (
+      <View style={styles.centerScreen}>
+        <Text style={styles.centerText}>Please sign in to view your feed.</Text>
+      </View>
+    );
+  }
+
+  if (loading && posts.length === 0) {
+    return (
+      <View style={styles.root}>
+        <HomeSkeleton />
+      </View>
+    );
+  }
+
+  if (error && posts.length === 0) {
+    return (
+      <View style={styles.root}>
+        <TopNav />
+        <View style={styles.centerScreen}>
+          <Text style={styles.centerText}>Couldn&apos;t load your feed.</Text>
+          <Text style={styles.centerSubtext}>{error.message}</Text>
+          <TouchableOpacity style={styles.primaryBtn} onPress={onRefresh} activeOpacity={0.85}>
+            <Text style={styles.primaryBtnText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.root}>
       <TopNav />
 
-      <ScrollView
+      <FlatList
+        data={posts}
+        keyExtractor={item => item.id}
+        renderItem={({ item }) => <FeedPostCard post={item} />}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.scroll}
-      >
-        {/* Hero */}
-        <HeroBanner />
-
-        {/* Trending header */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Trending 🔥</Text>
-          <Text style={styles.sectionSub}>What people are saying</Text>
-        </View>
-
-        {/* Posts */}
-        {MOCK_POSTS.map(post => (
-          <PostCard key={post.id} post={post} />
-        ))}
-
-        <View style={styles.bottomSpacer} />
-      </ScrollView>
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2A5C40" colors={['#2A5C40']} />
+        }
+        onEndReached={loadMore}
+        onEndReachedThreshold={0.5}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={VIEWABILITY_CONFIG}
+        ListHeaderComponent={
+          <>
+            <HeroBanner onDiscover={navigateToDiscover} />
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Trending 🔥</Text>
+              <Text style={styles.sectionSub}>What people are saying</Text>
+            </View>
+          </>
+        }
+        ListFooterComponent={
+          fetchingMore ? (
+            <>
+              <FeedPostCardSkeleton />
+              <FeedPostCardSkeleton />
+            </>
+          ) : (
+            <View style={styles.bottomSpacer} />
+          )
+        }
+        ListEmptyComponent={
+          <View style={styles.emptyState}>
+            <Text style={styles.emptyTitle}>No activities yet</Text>
+            <Text style={styles.emptySubtitle}>Be the first to share something with the community.</Text>
+            <TouchableOpacity style={styles.primaryBtn} onPress={openPostSheet} activeOpacity={0.85}>
+              <Text style={styles.primaryBtnText}>Create a post</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.refreshLink} onPress={onRefresh} activeOpacity={0.7}>
+              <Text style={styles.refreshLinkText}>Refresh</Text>
+            </TouchableOpacity>
+          </View>
+        }
+      />
     </View>
   );
 }
@@ -71,6 +149,7 @@ const styles = StyleSheet.create({
   scroll: {
     paddingTop: 14,
     paddingBottom: 24,
+    flexGrow: 1,
   },
   sectionHeader: {
     paddingHorizontal: 16,
@@ -90,4 +169,62 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   bottomSpacer: { height: 16 },
+  centerScreen: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+    gap: 8,
+  },
+  centerText: {
+    fontSize: 15,
+    fontFamily: 'Roboto_400Bold',
+    color: '#1A1A1A',
+    textAlign: 'center',
+  },
+  centerSubtext: {
+    fontSize: 13,
+    fontFamily: 'Roboto_400Regular',
+    color: '#9CA3AF',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  primaryBtn: {
+    backgroundColor: '#2A5C40',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+    marginTop: 8,
+  },
+  primaryBtnText: {
+    fontSize: 14,
+    fontFamily: 'Roboto_500Medium',
+    color: '#FFFFFF',
+  },
+  emptyState: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 32,
+    paddingTop: 60,
+    gap: 6,
+  },
+  emptyTitle: {
+    fontSize: 16,
+    fontFamily: 'Roboto_400Bold',
+    color: '#1A1A1A',
+  },
+  emptySubtitle: {
+    fontSize: 13,
+    fontFamily: 'Roboto_400Regular',
+    color: '#9CA3AF',
+    textAlign: 'center',
+    marginBottom: 4,
+  },
+  refreshLink: { marginTop: 12 },
+  refreshLinkText: {
+    fontSize: 13,
+    fontFamily: 'Roboto_500Medium',
+    color: '#2A5C40',
+    textDecorationLine: 'underline',
+  },
 });

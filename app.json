@@ -51,7 +51,8 @@
           "photosPermission": "Allow distrxct to access your photos.",
           "cameraPermission": "Allow distrxct to use your camera."
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "extra": {
       "eas": {

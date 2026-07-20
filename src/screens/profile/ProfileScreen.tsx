@@ -8,7 +8,7 @@ import BusinessCard from '@features/discover/components/BusinessCard';
 import { MOCK_BUSINESSES } from '@features/discover/data/mockBusinesses';
 import type { BusinessReview } from '@features/discover/types';
 import PostCard, { type PostData } from '@features/posts/components/PostCard';
-import { navigateToSettings } from '@navigation/navigationRef';
+import { navigateToSettings, navigateToBusiness } from '@navigation/navigationRef';
 
 type ProfileTab = 'reviews' | 'activity' | 'collections';
 
@@ -157,7 +157,11 @@ export default function ProfileScreen() {
           {activeTab === 'collections' && (
             <View>
               {MOCK_BUSINESSES.map(business => (
-                <BusinessCard key={business.id} business={business} />
+                <BusinessCard
+                  key={business.id}
+                  business={business}
+                  onPress={() => navigateToBusiness(business.id)}
+                />
               ))}
             </View>
           )}

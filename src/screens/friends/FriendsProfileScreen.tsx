@@ -11,6 +11,7 @@ import { MOCK_BUSINESSES } from '@features/discover/data/mockBusinesses';
 import type { BusinessReview } from '@features/discover/types';
 import PostCard, { type PostData } from '@features/posts/components/PostCard';
 import type { FriendsStackParamList } from '@navigation/types';
+import { navigateToBusiness } from '@navigation/navigationRef';
 
 type Route = RouteProp<FriendsStackParamList, 'FriendsProfile'>;
 type ProfileTab = 'reviews' | 'activity' | 'collections';
@@ -171,7 +172,11 @@ export default function FriendsProfileScreen() {
           {activeTab === 'collections' && (
             <View>
               {MOCK_BUSINESSES.map(business => (
-                <BusinessCard key={business.id} business={business} />
+                <BusinessCard
+                  key={business.id}
+                  business={business}
+                  onPress={() => navigateToBusiness(business.id)}
+                />
               ))}
             </View>
           )}
