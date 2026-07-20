@@ -9,9 +9,20 @@ import {
   Platform,
   ScrollView,
   StatusBar,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ChevronLeft, Eye, EyeOff } from 'lucide-react-native';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { RouteProp } from '@react-navigation/native';
+import type { AuthStackParamList } from '@navigation/types';
+import PasswordRequirements from '@features/auth/components/PasswordRequirements';
+import { isValidPassword } from '@utils/validators';
+import { useAuth } from '@features/auth/hooks/useAuth';
+
+type NavProp = NativeStackNavigationProp<AuthStackParamList>;
+type RouteProps = RouteProp<AuthStackParamList, 'ResetPassword'>;
 
 const T = {
   green: '#2D6A2D',
@@ -23,28 +34,42 @@ const T = {
   white: '#FFFFFF',
   black: '#000000',
   red: '#E53935',
-  strengthFilled: '#4CAF50',
-  strengthEmpty: '#E0E0E0',
 };
-
-type StrengthItem = {
-  symbol: string;
-  label: string;
-  met: boolean;
-  color: string;
-};
-
-const STRENGTH_ITEMS: StrengthItem[] = [
-  { symbol: '8+', label: 'Characters', met: true, color: T.green },
-  { symbol: 'AA', label: 'Uppercase', met: true, color: T.green },
-  { symbol: 'aa', label: 'Lowercase', met: false, color: T.red },
-  { symbol: '123', label: 'Numbers', met: false, color: T.gray },
-  { symbol: '$#^', label: 'Symbol', met: false, color: T.gray },
-];
 
 export default function ResetPasswordScreen() {
+  const navigation = useNavigation<NavProp>();
+  const route = useRoute<RouteProps>();
+  const token = route.params?.token;
+  const { resetPassword, resetPasswordLoading } = useAuth();
+
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const passwordValid = isValidPassword(password);
+  const passwordsMatch = password.length > 0 && password === confirmPassword;
+  const canSubmit = passwordValid && passwordsMatch && !!token;
+
+  const handleSubmit = async () => {
+    if (!token) {
+      setError('This reset link is invalid or has expired. Please request a new one.');
+      return;
+    }
+    try {
+      setError(null);
+      const result = await resetPassword(token, password);
+      if (result.success) {
+        navigation.navigate('Login');
+      } else {
+        setError(result.message);
+      }
+    } catch (e) {
+      const err = e as { graphQLErrors?: { message?: string }[]; message?: string };
+      setError(err?.graphQLErrors?.[0]?.message ?? err?.message ?? 'Could not reset your password. Please try again.');
+    }
+  };
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -59,7 +84,11 @@ export default function ResetPasswordScreen() {
           showsVerticalScrollIndicator={false}
         >
           {/* Back */}
-          <TouchableOpacity style={styles.backBtn} activeOpacity={0.7}>
+          <TouchableOpacity
+            style={styles.backBtn}
+            activeOpacity={0.7}
+            onPress={() => navigation.navigate('Login')}
+          >
             <ChevronLeft size={20} color={T.black} />
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
@@ -76,23 +105,12 @@ export default function ResetPasswordScreen() {
               placeholder="* * * * * *"
               placeholderTextColor={T.placeholder}
               secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={setPassword}
             />
             <TouchableOpacity onPress={() => setShowPassword(v => !v)} style={styles.eyeBtn} activeOpacity={0.6}>
               {showPassword ? <Eye size={20} color={T.gray} /> : <EyeOff size={20} color={T.gray} />}
             </TouchableOpacity>
-          </View>
-
-          {/* Strength bar */}
-          <View style={styles.strengthBar}>
-            {[0, 1, 2, 3, 4].map(i => (
-              <View
-                key={i}
-                style={[
-                  styles.strengthSegment,
-                  { backgroundColor: i < 2 ? T.strengthFilled : i === 2 ? '#81C784' : T.strengthEmpty },
-                ]}
-              />
-            ))}
           </View>
 
           {/* Confirm Password */}
@@ -103,26 +121,34 @@ export default function ResetPasswordScreen() {
               placeholder="* * * * * *"
               placeholderTextColor={T.placeholder}
               secureTextEntry={!showConfirm}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
             />
             <TouchableOpacity onPress={() => setShowConfirm(v => !v)} style={styles.eyeBtn} activeOpacity={0.6}>
               {showConfirm ? <Eye size={20} color={T.gray} /> : <EyeOff size={20} color={T.gray} />}
             </TouchableOpacity>
           </View>
+          {confirmPassword.length > 0 && !passwordsMatch && (
+            <Text style={styles.matchErrorText}>Passwords do not match.</Text>
+          )}
 
-          {/* Strength requirements */}
-          <Text style={styles.requirementsTitle}>Password strength requirement</Text>
-          <View style={styles.requirementsRow}>
-            {STRENGTH_ITEMS.map((item, i) => (
-              <View key={i} style={styles.requirementItem}>
-                <Text style={[styles.requirementSymbol, { color: item.color }]}>{item.symbol}</Text>
-                <Text style={styles.requirementLabel}>{item.label}</Text>
-              </View>
-            ))}
-          </View>
+          <PasswordRequirements password={password} />
+
+          {/* Error */}
+          {error ? <Text style={styles.matchErrorText}>{error}</Text> : null}
 
           {/* Send button */}
-          <TouchableOpacity style={styles.primaryBtn} activeOpacity={0.85}>
-            <Text style={styles.primaryBtnText}>Send</Text>
+          <TouchableOpacity
+            style={[styles.primaryBtn, (!canSubmit || resetPasswordLoading) && styles.primaryBtnDisabled]}
+            activeOpacity={0.85}
+            onPress={handleSubmit}
+            disabled={!canSubmit || resetPasswordLoading}
+          >
+            {resetPasswordLoading ? (
+              <ActivityIndicator color={T.white} />
+            ) : (
+              <Text style={styles.primaryBtnText}>Send</Text>
+            )}
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -150,17 +176,9 @@ const styles = StyleSheet.create({
   passwordInput: { flex: 1, fontSize: 15, color: T.black, fontFamily: 'Roboto_400Regular' },
   eyeBtn: { padding: 4 },
 
-  // Strength bar
-  strengthBar: { flexDirection: 'row', gap: 4, height: 4, marginBottom: 4 },
-  strengthSegment: { flex: 1, borderRadius: 2 },
+  matchErrorText: { fontSize: 12, color: T.red, marginBottom: 12, fontFamily: 'Roboto_400Regular' },
 
-  // Requirements
-  requirementsTitle: { fontSize: 13, color: T.gray, textAlign: 'center', marginBottom: 16, marginTop: 8, fontFamily: 'Roboto_400Regular' },
-  requirementsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 28 },
-  requirementItem: { alignItems: 'center', gap: 4 },
-  requirementSymbol: { fontSize: 14, fontWeight: '700', fontFamily: 'Roboto_700Bold' },
-  requirementLabel: { fontSize: 11, color: T.gray, fontFamily: 'Roboto_400Regular' },
-
-  primaryBtn: { height: 52, backgroundColor: T.green, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+  primaryBtn: { height: 52, backgroundColor: T.green, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginTop: 20 },
+  primaryBtnDisabled: { opacity: 0.6 },
   primaryBtnText: { fontSize: 16, fontWeight: '600', color: T.white, fontFamily: 'Roboto_500Medium' },
 });

@@ -9,9 +9,6 @@
       "@/*": [
         "src/*"
       ],
-      "@apollo/*": [
-        "src/apollo/*"
-      ],
       "@components/*": [
         "src/components/*"
       ],

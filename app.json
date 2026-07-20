@@ -3,6 +3,7 @@
     "name": "distrxct",
     "slug": "distrxct",
     "version": "1.0.0",
+    "scheme": "distrxct",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",
@@ -50,7 +51,8 @@
           "photosPermission": "Allow distrxct to access your photos.",
           "cameraPermission": "Allow distrxct to use your camera."
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "extra": {
       "eas": {
