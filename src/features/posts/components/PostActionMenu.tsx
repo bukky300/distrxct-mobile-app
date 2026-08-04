@@ -73,27 +73,24 @@ export default function PostActionMenu({
           { top, right: Math.min(right, SCREEN_WIDTH - MENU_WIDTH - 8) },
         ]}
       >
-        <TouchableOpacity
-          style={styles.item}
-          onPress={() => { onClose(); onReport(); }}
-          activeOpacity={0.65}
-        >
-          <Flag size={17} color="#1A1A1A" strokeWidth={1.8} />
-          <Text style={styles.itemText}>Report</Text>
-        </TouchableOpacity>
-
-        {isOwner && (
-          <>
-            <View style={styles.divider} />
-            <TouchableOpacity
-              style={styles.item}
-              onPress={() => { onClose(); onDelete?.(); }}
-              activeOpacity={0.65}
-            >
-              <Trash2 size={17} color="#CC0000" strokeWidth={1.8} />
-              <Text style={[styles.itemText, styles.deleteText]}>Delete</Text>
-            </TouchableOpacity>
-          </>
+        {isOwner ? (
+          <TouchableOpacity
+            style={styles.item}
+            onPress={() => { onClose(); onDelete?.(); }}
+            activeOpacity={0.65}
+          >
+            <Trash2 size={17} color="#CC0000" strokeWidth={1.8} />
+            <Text style={[styles.itemText, styles.deleteText]}>Delete</Text>
+          </TouchableOpacity>
+        ) : (
+          <TouchableOpacity
+            style={styles.item}
+            onPress={() => { onClose(); onReport(); }}
+            activeOpacity={0.65}
+          >
+            <Flag size={17} color="#1A1A1A" strokeWidth={1.8} />
+            <Text style={styles.itemText}>Report</Text>
+          </TouchableOpacity>
         )}
       </Animated.View>
     </Modal>
@@ -128,10 +125,5 @@ const styles = StyleSheet.create({
   },
   deleteText: {
     color: '#CC0000',
-  },
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: '#E5E5EA',
-    marginHorizontal: 12,
   },
 });

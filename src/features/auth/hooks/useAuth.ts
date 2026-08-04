@@ -9,7 +9,10 @@ interface RawMeResponse {
   id: string;
   username: string;
   email: string;
+  first_name?: string | null;
+  last_name?: string | null;
   bio?: string | null;
+  provider?: string | null;
   profile_picture?: { thumbnail?: string | null } | null;
 }
 
@@ -18,7 +21,10 @@ function toCurrentUser(me: RawMeResponse): CurrentUser {
     id: me.id,
     username: me.username,
     email: me.email,
+    firstName: me.first_name,
+    lastName: me.last_name,
     bio: me.bio,
+    provider: me.provider,
     avatarUrl: me.profile_picture?.thumbnail ?? null,
   };
 }
@@ -99,7 +105,10 @@ const GET_ME = gql`
       id
       username
       email
+      first_name
+      last_name
       bio
+      provider
       profile_picture {
         thumbnail
       }

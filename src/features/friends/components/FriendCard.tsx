@@ -1,62 +1,74 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Users, Signature, MessageCircle } from 'lucide-react-native';
-import type { Friend } from '../types';
+import FollowButton from './FollowButton';
+import MessageComposeSheet from './MessageComposeSheet';
+import { PLACEHOLDER_AVATAR } from '../utils/placeholderAvatar';
+import { fullName } from '../utils/formatName';
+import type { FriendUser } from '../types';
 
 interface Props {
-  friend: Friend;
-  onPress?: () => void;
-  onToggleFollow?: () => void;
-  onPressMessage?: () => void;
+  friend: FriendUser;
+  /** Receives the tapped friend's id — keep this reference stable in the parent
+   *  (e.g. useCallback) so FlatList rows can actually benefit from React.memo below. */
+  onPress?: (id: string) => void;
 }
 
-export default function FriendCard({ friend, onPress, onToggleFollow, onPressMessage }: Props) {
-  const label = friend.isFollowing ? 'Unfollow' : friend.followsYou ? 'Follow back' : 'Follow';
+function FriendCard({ friend, onPress }: Props) {
+  const [followerCount, setFollowerCount] = useState(friend.followers?.length ?? 0);
+  const [messageVisible, setMessageVisible] = useState(false);
+  const name = fullName(friend.first_name, friend.last_name);
 
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
+    <TouchableOpacity style={styles.card} onPress={() => onPress?.(friend.id)} activeOpacity={0.85}>
       <View style={styles.header}>
-        <Image source={friend.avatar} style={styles.avatar} />
+        <Image
+          source={friend.profile_picture?.thumbnail ? { uri: friend.profile_picture.thumbnail } : PLACEHOLDER_AVATAR}
+          style={styles.avatar}
+        />
         <View style={styles.info}>
-          <Text style={styles.name} numberOfLines={1}>{friend.name}</Text>
+          <Text style={styles.name} numberOfLines={1}>{name}</Text>
+          {friend.location?.formatted_address ? (
+            <Text style={styles.location} numberOfLines={1}>{friend.location.formatted_address}</Text>
+          ) : null}
           <View style={styles.statsRow}>
             <Users size={14} color="#9CA3AF" strokeWidth={2} />
             <Text style={styles.statText}>
-              Friends <Text style={styles.statValue}>{friend.friendsCount}</Text>
+              Friends <Text style={styles.statValue}>{followerCount}</Text>
             </Text>
             <View style={styles.dot} />
             <Signature size={14} color="#9CA3AF" strokeWidth={2} />
             <Text style={styles.statText}>
-              Reviews <Text style={styles.statValue}>{friend.reviewsCount}</Text>
+              Reviews <Text style={styles.statValue}>{friend.reviewsCount ?? 0}</Text>
             </Text>
           </View>
         </View>
       </View>
 
       <View style={styles.actions}>
-        <TouchableOpacity
-          style={[styles.followBtn, friend.isFollowing && styles.followBtnUnfollow]}
-          onPress={onToggleFollow}
-          activeOpacity={0.8}
-        >
-          <Text style={[styles.followText, friend.isFollowing && styles.followTextUnfollow]}>
-            {label}
-          </Text>
-        </TouchableOpacity>
+        <FollowButton
+          userId={friend.id}
+          style={styles.followBtn}
+          onCountChange={delta => setFollowerCount(c => Math.max(0, c + delta))}
+        />
 
         <TouchableOpacity
           style={styles.messageBtn}
-          onPress={onPressMessage}
+          onPress={() => setMessageVisible(true)}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel={`Message ${friend.name}`}
+          accessibilityLabel={`Message ${name}`}
         >
           <MessageCircle size={18} color="#7C7212" strokeWidth={2} />
         </TouchableOpacity>
       </View>
+
+      <MessageComposeSheet visible={messageVisible} onClose={() => setMessageVisible(false)} recipientName={name} />
     </TouchableOpacity>
   );
 }
+
+export default React.memo(FriendCard);
 
 const styles = StyleSheet.create({
   card: {
@@ -79,17 +91,23 @@ const styles = StyleSheet.create({
   info: {
     flex: 1,
     justifyContent: 'center',
-    gap: 6,
+    gap: 4,
   },
   name: {
     fontSize: 16,
     fontFamily: 'Roboto_700Bold',
     color: '#1A1A1A',
   },
+  location: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    fontFamily: 'Roboto_400Regular',
+  },
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 5,
+    marginTop: 2,
   },
   statText: {
     fontSize: 13,
@@ -114,21 +132,6 @@ const styles = StyleSheet.create({
   followBtn: {
     flex: 1,
     height: 46,
-    borderRadius: 10,
-    backgroundColor: '#2A5C40',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  followBtnUnfollow: {
-    backgroundColor: '#D1D5DB',
-  },
-  followText: {
-    fontSize: 15,
-    fontFamily: 'Roboto_400Bold',
-    color: '#FFFFFF',
-  },
-  followTextUnfollow: {
-    color: '#1A1A1A',
   },
   messageBtn: {
     width: 50,

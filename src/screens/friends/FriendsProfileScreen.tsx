@@ -1,83 +1,59 @@
 import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChevronLeft, Signature, Users, Share2 } from 'lucide-react-native';
-import { getFriendById } from '@features/friends/data/mockFriends';
-import FollowersListSheet, { type FollowerRow } from '@features/friends/components/FollowersListSheet';
-import ReviewListItem from '@features/discover/components/ReviewListItem';
+import { ChevronLeft, Signature, Users, Share2, MoreVertical, MessageCircle, Star, Handshake } from 'lucide-react-native';
+import FollowButton from '@features/friends/components/FollowButton';
+import FriendOptionsSheet from '@features/friends/components/FriendOptionsSheet';
+import MessageComposeSheet from '@features/friends/components/MessageComposeSheet';
+import FriendListSkeleton from '@features/friends/components/FriendListSkeleton';
+import EmptyState from '@components/ui/EmptyState';
+import { useFriendUser } from '@features/friends/hooks/useFriendUser';
+import { useUserReviews } from '@features/friends/hooks/useUserReviews';
+import { useFriendActivity } from '@features/friends/hooks/useFriendActivity';
+import { useFriendCollections } from '@features/friends/hooks/useFriendCollections';
+import { PLACEHOLDER_AVATAR } from '@features/friends/utils/placeholderAvatar';
+import { fullName } from '@features/friends/utils/formatName';
 import BusinessCard from '@features/discover/components/BusinessCard';
-import { MOCK_BUSINESSES } from '@features/discover/data/mockBusinesses';
-import type { BusinessReview } from '@features/discover/types';
-import PostCard, { type PostData } from '@features/posts/components/PostCard';
+import PostCard from '@features/posts/components/PostCard';
 import type { FriendsStackParamList } from '@navigation/types';
 import { navigateToBusiness } from '@navigation/navigationRef';
 
 type Route = RouteProp<FriendsStackParamList, 'FriendsProfile'>;
-type ProfileTab = 'reviews' | 'activity' | 'collections';
-
-const MOCK_REVIEWS: BusinessReview[] = [
-  {
-    id: 'r1',
-    user: { name: 'Sampato' },
-    timestamp: '23 hrs ago',
-    rating: 2,
-    comment: 'Lorem ipsum dolor sit amet consectetur. Odio sed neque risus cras lacus',
-    helpfulCount: 0,
-  },
-  {
-    id: 'r2',
-    user: { name: 'Sampato' },
-    timestamp: '23 hrs ago',
-    rating: 2,
-    comment: 'Lorem ipsum dolor sit amet consectetur. Odio sed neque risus cras lacus',
-    helpfulCount: 0,
-  },
-];
-
-const FOLLOWERS: FollowerRow[] = [
-  {
-    id: 'f1',
-    name: 'Kinsley Ekene',
-    avatar: require('../../../assets/images/profile.png'),
-    isFollowing: false,
-  },
-];
+type Nav = NativeStackNavigationProp<FriendsStackParamList>;
+type ProfileTab = 'reviews' | 'activity' | 'collection';
 
 export default function FriendsProfileScreen() {
-  const navigation = useNavigation();
+  const navigation = useNavigation<Nav>();
   const { params } = useRoute<Route>();
   const insets = useSafeAreaInsets();
 
-  const friend = getFriendById(params.friendId);
-
-  const [isFollowing, setIsFollowing] = useState(friend?.isFollowing ?? false);
   const [activeTab, setActiveTab] = useState<ProfileTab>('reviews');
-  const [followersVisible, setFollowersVisible] = useState(false);
-  const [followers, setFollowers] = useState(FOLLOWERS);
+  const [optionsVisible, setOptionsVisible] = useState(false);
+  const [messageVisible, setMessageVisible] = useState(false);
 
-  if (!friend) return null;
+  const { friend, loading: friendLoading } = useFriendUser(params.friendId);
+  const { reviews, loading: reviewsLoading } = useUserReviews(params.friendId);
+  const { posts, loading: activityLoading } = useFriendActivity(params.friendId);
+  const { businesses, loading: collectionLoading } = useFriendCollections(params.friendId);
 
-  const activityPost: PostData = {
-    id: 'a1',
-    type: 'review',
-    user: { name: friend.name },
-    timestamp: '5 hrs ago',
-    reviewedBusiness: 'ABC hotels',
-    location: 'Lagos, Nigeria',
-    rating: 3,
-    body: 'Amazing experience! The staff were friendly and the service was top notch. Will definitely come back',
-    imageUri: 'https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?w=800',
-    helpfulCount: 21,
-    commentCount: 5,
-    isOwner: false,
-  };
-
-  function toggleFollower(id: string) {
-    setFollowers(list =>
-      list.map(f => (f.id === id ? { ...f, isFollowing: !f.isFollowing } : f)),
+  if (friendLoading || !friend) {
+    return (
+      <View style={styles.root}>
+        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+          <TouchableOpacity onPress={navigation.goBack} style={styles.backRow} activeOpacity={0.7}>
+            <ChevronLeft size={22} color="#1A1A1A" strokeWidth={2} />
+            <Text style={styles.backText}>Back</Text>
+          </TouchableOpacity>
+        </View>
+        <FriendListSkeleton count={1} />
+      </View>
     );
   }
+
+  const name = fullName(friend.first_name, friend.last_name);
+  const followerCount = friend.followers?.length ?? 0;
 
   return (
     <View style={styles.root}>
@@ -86,32 +62,36 @@ export default function FriendsProfileScreen() {
           <ChevronLeft size={22} color="#1A1A1A" strokeWidth={2} />
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
+        <TouchableOpacity onPress={() => setOptionsVisible(true)} style={styles.kebabBtn} activeOpacity={0.7}>
+          <MoreVertical size={20} color="#1A1A1A" strokeWidth={2} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <View style={styles.profileCard}>
           <View style={styles.identityRow}>
-            <Image source={friend.avatar} style={styles.avatar} />
+            <Image
+              source={friend.profile_picture?.thumbnail ? { uri: friend.profile_picture.thumbnail } : PLACEHOLDER_AVATAR}
+              style={styles.avatar}
+            />
             <View style={styles.identityInfo}>
-              <Text style={styles.name}>{friend.name}</Text>
+              <Text style={styles.name}>{name}</Text>
               <View style={styles.statsRow}>
-                <TouchableOpacity
-                  style={styles.statBtn}
-                  onPress={() => setActiveTab('reviews')}
-                  activeOpacity={0.7}
-                >
+                <View style={styles.statBtn}>
                   <Signature size={14} color="#9CA3AF" strokeWidth={2} />
-                  <Text style={styles.statText}>Reviews</Text>
-                </TouchableOpacity>
+                  <Text style={styles.statText}>
+                    Reviews <Text style={styles.statValue}>{reviews.length}</Text>
+                  </Text>
+                </View>
                 <View style={styles.dot} />
                 <TouchableOpacity
                   style={styles.statBtn}
-                  onPress={() => setFollowersVisible(true)}
+                  onPress={() => navigation.navigate('FollowersList', { friendId: friend.id, friendName: name })}
                   activeOpacity={0.7}
                 >
                   <Users size={14} color="#2A5C40" strokeWidth={2} />
                   <Text style={styles.statTextActive}>
-                    Followers <Text style={styles.statValue}>{followers.length}</Text>
+                    Followers <Text style={styles.statValue}>{followerCount}</Text>
                   </Text>
                 </TouchableOpacity>
               </View>
@@ -119,18 +99,14 @@ export default function FriendsProfileScreen() {
           </View>
 
           <View style={styles.actionsRow}>
-            <TouchableOpacity
-              style={[styles.followBtn, !isFollowing && styles.followBtnActive]}
-              onPress={() => setIsFollowing(f => !f)}
-              activeOpacity={0.85}
-            >
-              <Text style={[styles.followText, !isFollowing && styles.followTextActive]}>
-                {isFollowing ? 'Unfollow' : 'Follow'}
-              </Text>
+            <FollowButton userId={friend.id} style={styles.followBtn} />
+
+            <TouchableOpacity style={styles.messageBtn} onPress={() => setMessageVisible(true)} activeOpacity={0.7}>
+              <MessageCircle size={16} color="#1A1A1A" strokeWidth={2} />
+              <Text style={styles.messageText}>Message</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.shareBtn} activeOpacity={0.7}>
-              <Text style={styles.shareText}>Share</Text>
+            <TouchableOpacity style={styles.shareBtn} onPress={() => setOptionsVisible(true)} activeOpacity={0.7}>
               <Share2 size={15} color="#1A1A1A" strokeWidth={2} />
             </TouchableOpacity>
           </View>
@@ -138,57 +114,91 @@ export default function FriendsProfileScreen() {
 
         <View style={styles.tabsRow}>
           <TouchableOpacity onPress={() => setActiveTab('reviews')} activeOpacity={0.7}>
-            <Text style={[styles.tabLabel, activeTab === 'reviews' && styles.tabLabelActive]}>
-              Reviews
-            </Text>
+            <Text style={[styles.tabLabel, activeTab === 'reviews' && styles.tabLabelActive]}>Reviews</Text>
             {activeTab === 'reviews' && <View style={styles.tabUnderline} />}
           </TouchableOpacity>
           <TouchableOpacity onPress={() => setActiveTab('activity')} activeOpacity={0.7}>
-            <Text style={[styles.tabLabel, activeTab === 'activity' && styles.tabLabelActive]}>
-              Activity
-            </Text>
+            <Text style={[styles.tabLabel, activeTab === 'activity' && styles.tabLabelActive]}>Activity</Text>
             {activeTab === 'activity' && <View style={styles.tabUnderline} />}
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => setActiveTab('collections')} activeOpacity={0.7}>
-            <Text style={[styles.tabLabel, activeTab === 'collections' && styles.tabLabelActive]}>
-              Collections
-            </Text>
-            {activeTab === 'collections' && <View style={styles.tabUnderline} />}
+          <TouchableOpacity onPress={() => setActiveTab('collection')} activeOpacity={0.7}>
+            <Text style={[styles.tabLabel, activeTab === 'collection' && styles.tabLabelActive]}>Collection</Text>
+            {activeTab === 'collection' && <View style={styles.tabUnderline} />}
           </TouchableOpacity>
           <View style={styles.tabsDivider} />
         </View>
 
         <View style={styles.section}>
-          {activeTab === 'reviews' && (
-            <View style={styles.reviewsList}>
-              {MOCK_REVIEWS.map(review => (
-                <ReviewListItem key={review.id} review={review} />
-              ))}
-            </View>
-          )}
+          {activeTab === 'reviews' &&
+            (reviewsLoading ? (
+              <FriendListSkeleton count={2} />
+            ) : reviews.length === 0 ? (
+              <EmptyState icon="star-outline" title="No reviews yet." />
+            ) : (
+              <View style={styles.reviewsList}>
+                {reviews.map(review => (
+                  <View key={review.id} style={styles.reviewCard}>
+                    {review.content_title ? <Text style={styles.reviewTitle}>{review.content_title}</Text> : null}
+                    <View style={styles.ratingRow}>
+                      {Array.from({ length: 5 }, (_, i) => (
+                        <Star
+                          key={i}
+                          size={14}
+                          color={i < review.rating ? '#FACC15' : '#D1D5DB'}
+                          fill={i < review.rating ? '#FACC15' : 'none'}
+                          strokeWidth={1.5}
+                        />
+                      ))}
+                    </View>
+                    {review.content_message ? <Text style={styles.reviewMessage}>{review.content_message}</Text> : null}
+                    <View style={styles.helpfulRow}>
+                      <Handshake size={16} color="#9CA3AF" strokeWidth={1.8} />
+                      <Text style={styles.helpfulCount}>{review.help_count}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            ))}
 
-          {activeTab === 'activity' && <PostCard post={activityPost} />}
+          {activeTab === 'activity' &&
+            (activityLoading ? (
+              <FriendListSkeleton count={2} />
+            ) : posts.length === 0 ? (
+              <EmptyState icon="reader-outline" title="No activity yet." />
+            ) : (
+              <View style={{ gap: 12 }}>
+                {posts.map(post => (
+                  <PostCard key={post.id} post={post} />
+                ))}
+              </View>
+            ))}
 
-          {activeTab === 'collections' && (
-            <View>
-              {MOCK_BUSINESSES.map(business => (
-                <BusinessCard
-                  key={business.id}
-                  business={business}
-                  onPress={() => navigateToBusiness(business.id)}
-                />
-              ))}
-            </View>
-          )}
+          {activeTab === 'collection' &&
+            (collectionLoading ? (
+              <FriendListSkeleton count={2} />
+            ) : businesses.length === 0 ? (
+              <EmptyState icon="bookmark-outline" title="No businesses yet." />
+            ) : (
+              <View>
+                {businesses.map(business => (
+                  <BusinessCard
+                    key={business.id}
+                    business={business}
+                    onPress={() => navigateToBusiness(business.id)}
+                  />
+                ))}
+              </View>
+            ))}
         </View>
       </ScrollView>
 
-      <FollowersListSheet
-        visible={followersVisible}
-        onClose={() => setFollowersVisible(false)}
-        followers={followers}
-        onToggleFollow={toggleFollower}
+      <FriendOptionsSheet
+        visible={optionsVisible}
+        onClose={() => setOptionsVisible(false)}
+        friendId={friend.id}
+        friendName={name}
       />
+      <MessageComposeSheet visible={messageVisible} onClose={() => setMessageVisible(false)} recipientName={name} />
     </View>
   );
 }
@@ -198,6 +208,9 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 16,
     paddingBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   backRow: {
     flexDirection: 'row',
@@ -208,6 +221,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#1A1A1A',
     fontFamily: 'Roboto_400Regular',
+  },
+  kebabBtn: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   scroll: {
     paddingBottom: 24,
@@ -274,37 +294,31 @@ const styles = StyleSheet.create({
   },
   followBtn: {
     flex: 1,
-    height: 46,
-    borderRadius: 10,
-    backgroundColor: '#D1D5DB',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
-  followBtnActive: {
-    backgroundColor: '#2A5C40',
-  },
-  followText: {
-    fontSize: 15,
-    fontFamily: 'Roboto_400Bold',
-    color: '#1A1A1A',
-  },
-  followTextActive: {
-    color: '#FFFFFF',
-  },
-  shareBtn: {
+  messageBtn: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     gap: 6,
-    paddingHorizontal: 18,
+    paddingHorizontal: 14,
     height: 46,
     borderRadius: 10,
     borderWidth: 1,
     borderColor: '#1A1A1A',
   },
-  shareText: {
-    fontSize: 15,
+  messageText: {
+    fontSize: 14,
     fontFamily: 'Roboto_400Bold',
     color: '#1A1A1A',
+  },
+  shareBtn: {
+    width: 46,
+    height: 46,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#1A1A1A',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   tabsRow: {
     flexDirection: 'row',
@@ -341,5 +355,37 @@ const styles = StyleSheet.create({
   },
   reviewsList: {
     gap: 12,
+  },
+  reviewCard: {
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    borderRadius: 16,
+    padding: 16,
+    gap: 8,
+  },
+  reviewTitle: {
+    fontSize: 15,
+    fontFamily: 'Roboto_700Bold',
+    color: '#1A1A1A',
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    gap: 2,
+  },
+  reviewMessage: {
+    fontSize: 14,
+    color: '#4B5563',
+    fontFamily: 'Roboto_400Regular',
+    lineHeight: 20,
+  },
+  helpfulRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  helpfulCount: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    fontFamily: 'Roboto_400Regular',
   },
 });

@@ -106,3 +106,24 @@ export interface CommentConnection {
   total_count: number;
   has_next_page: boolean;
 }
+
+export type ReportReason =
+  | 'SPAM'
+  | 'INAPPROPRIATE'
+  | 'HARASSMENT'
+  | 'HATE_SPEECH'
+  | 'VIOLENCE'
+  | 'NUDITY'
+  | 'FALSE_INFORMATION'
+  | 'SCAM'
+  | 'OTHER';
+
+export interface PostReport {
+  id: number;
+  post_id: string;
+  reporter_user_id: string;
+  reason: ReportReason;
+  details: string | null;
+  status: string;
+  created_at: string;
+}

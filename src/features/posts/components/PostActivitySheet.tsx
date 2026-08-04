@@ -7,7 +7,6 @@ import {
   ScrollView,
   StyleSheet,
   Image,
-  Alert,
 } from 'react-native';
 import { X, ChevronLeft, ImagePlay, Video as VideoIcon } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
@@ -16,6 +15,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import BottomSheet from '@components/ui/BottomSheet';
 import BusinessPickerList from './BusinessPickerList';
 import { useCreatePost } from '../hooks/useCreatePost';
+import { useToastStore } from '@features/ui/store/toastStore';
 import {
   postFormSchema,
   MAX_IMAGE_BYTES,
@@ -41,6 +41,7 @@ const DEFAULT_VALUES: PostFormValues = {
 export default function PostActivitySheet({ visible, onClose, onPosted }: Props) {
   const [tagSheetVisible, setTagSheetVisible] = useState(false);
   const { createPost, submitting, uploadProgress } = useCreatePost();
+  const showToast = useToastStore(s => s.showToast);
 
   const {
     control,
@@ -61,7 +62,7 @@ export default function PostActivitySheet({ visible, onClose, onPosted }: Props)
   async function pickMedia() {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (status !== 'granted') {
-      Alert.alert('Permission needed', 'Allow photo library access to add media.');
+      showToast('Allow photo library access to add media.', 'error');
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
@@ -78,11 +79,11 @@ export default function PostActivitySheet({ visible, onClose, onPosted }: Props)
       const fileSize = asset.fileSize ?? 0;
       const durationMs = asset.duration ?? 0;
       if (fileSize > MAX_VIDEO_BYTES) {
-        Alert.alert('Video too large', 'Videos must be 500MB or smaller.');
+        showToast('Videos must be 500MB or smaller.', 'error');
         return;
       }
       if (durationMs > MAX_VIDEO_DURATION_MS) {
-        Alert.alert('Video too long', 'Videos must be 60 seconds or shorter.');
+        showToast('Videos must be 60 seconds or shorter.', 'error');
         return;
       }
       setValue(
@@ -100,11 +101,11 @@ export default function PostActivitySheet({ visible, onClose, onPosted }: Props)
     } else {
       const fileSize = asset.fileSize ?? 0;
       if (fileSize > MAX_IMAGE_BYTES) {
-        Alert.alert('Image too large', 'Images must be 5MB or smaller.');
+        showToast('Images must be 5MB or smaller.', 'error');
         return;
       }
       if (!asset.base64) {
-        Alert.alert('Something went wrong', 'Could not read the selected image.');
+        showToast('Could not read the selected image.', 'error');
         return;
       }
       setValue(
@@ -139,9 +140,9 @@ export default function PostActivitySheet({ visible, onClose, onPosted }: Props)
       onPosted?.(post);
       reset(DEFAULT_VALUES);
       onClose();
-      Alert.alert('Posted!', 'Your activity has been posted.');
+      showToast('Your activity has been posted.', 'success');
     } catch (e) {
-      Alert.alert("Couldn't post", e instanceof Error ? e.message : 'Something went wrong. Please try again.');
+      showToast(e instanceof Error ? e.message : "Couldn't post. Please try again.", 'error');
     }
   };
 

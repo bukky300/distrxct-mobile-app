@@ -15,7 +15,7 @@ export default function Input({ label, error, style, ...props }: Props) {
       {label && <Text style={styles.label}>{label}</Text>}
       <TextInput
         {...props}
-        style={[styles.input, focused && styles.inputFocused, error && styles.inputError, style]}
+        style={[styles.input, focused && styles.inputFocused, !!error && styles.inputError, style]}
         placeholderTextColor={colors.textMuted}
         onFocus={e => { setFocused(true); props.onFocus?.(e); }}
         onBlur={e => { setFocused(false); props.onBlur?.(e); }}

@@ -1,36 +1,23 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Image,
-  TouchableOpacity,
-  ScrollView,
-  StyleSheet,
-  type ImageSourcePropType,
-} from 'react-native';
+import { View, Text, TextInput, Image, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { X } from 'lucide-react-native';
 import BottomSheet from '@components/ui/BottomSheet';
-
-export interface FollowerRow {
-  id: string;
-  name: string;
-  avatar: ImageSourcePropType;
-  isFollowing: boolean;
-}
+import FollowButton from './FollowButton';
+import { PLACEHOLDER_AVATAR } from '../utils/placeholderAvatar';
+import { fullName } from '../utils/formatName';
+import type { FriendUserSummary } from '../types';
 
 interface Props {
   visible: boolean;
   onClose: () => void;
-  followers: FollowerRow[];
-  onToggleFollow?: (id: string) => void;
+  followers: FriendUserSummary[];
 }
 
-export default function FollowersListSheet({ visible, onClose, followers, onToggleFollow }: Props) {
+export default function FollowersListSheet({ visible, onClose, followers }: Props) {
   const [query, setQuery] = useState('');
 
   const filtered = query.trim()
-    ? followers.filter(f => f.name.toLowerCase().includes(query.toLowerCase()))
+    ? followers.filter(f => fullName(f.first_name, f.last_name).toLowerCase().includes(query.trim().toLowerCase()))
     : followers;
 
   function handleClose() {
@@ -65,20 +52,17 @@ export default function FollowersListSheet({ visible, onClose, followers, onTogg
       >
         {filtered.map(follower => (
           <View key={follower.id} style={styles.row}>
-            <Image source={follower.avatar} style={styles.avatar} />
+            <Image
+              source={
+                follower.profile_picture?.thumbnail ? { uri: follower.profile_picture.thumbnail } : PLACEHOLDER_AVATAR
+              }
+              style={styles.avatar}
+            />
             <View style={styles.info}>
-              <Text style={styles.name} numberOfLines={1}>{follower.name}</Text>
-              <Text style={styles.subtitle}>No related friends</Text>
+              <Text style={styles.name} numberOfLines={1}>{fullName(follower.first_name, follower.last_name)}</Text>
+              <Text style={styles.subtitle} numberOfLines={1}>@{follower.username}</Text>
             </View>
-            <TouchableOpacity
-              style={[styles.followBtn, follower.isFollowing && styles.followBtnUnfollow]}
-              onPress={() => onToggleFollow?.(follower.id)}
-              activeOpacity={0.8}
-            >
-              <Text style={[styles.followText, follower.isFollowing && styles.followTextUnfollow]}>
-                {follower.isFollowing ? 'unfollow' : 'Follow'}
-              </Text>
-            </TouchableOpacity>
+            <FollowButton userId={follower.id} />
           </View>
         ))}
 
@@ -158,23 +142,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#9CA3AF',
     fontFamily: 'Roboto_400Regular',
-  },
-  followBtn: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 10,
-    backgroundColor: '#2A5C40',
-  },
-  followBtnUnfollow: {
-    backgroundColor: '#E5E7EB',
-  },
-  followText: {
-    fontSize: 13,
-    fontFamily: 'Roboto_400Bold',
-    color: '#FFFFFF',
-  },
-  followTextUnfollow: {
-    color: '#1A1A1A',
   },
   empty: {
     textAlign: 'center',

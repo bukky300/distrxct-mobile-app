@@ -27,16 +27,12 @@ import {
   Code,
 } from 'lucide-react-native';
 import { useUIStore } from '@features/ui/store/uiStore';
+import { useAuthStore } from '@features/auth/store/authStore';
+import { PLACEHOLDER_AVATAR } from '@features/friends/utils/placeholderAvatar';
+import { fullName } from '@features/friends/utils/formatName';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const DRAWER_WIDTH = SCREEN_WIDTH * 0.78;
-
-// ─── Mock user — swap with real auth state ────────────────────────────────────
-const MOCK_USER = {
-  name: 'ologwu samuel',
-  email: 'Ogbonnasamuel67@gmail.com',
-  avatarUri: undefined as string | undefined,
-};
 
 // ─── Menu items ───────────────────────────────────────────────────────────────
 const PRIMARY_ITEMS = [
@@ -60,8 +56,11 @@ interface Props {
 
 export default function ProfileDrawer({ onNavigate, onLogout }: Props) {
   const { profileDrawerOpen, closeProfileDrawer, openDevPreview } = useUIStore();
+  const user = useAuthStore(s => s.user);
   const [mounted, setMounted] = useState(false);
   const insets = useSafeAreaInsets();
+
+  const displayName = user ? fullName(user.firstName, user.lastName) || user.username : '';
 
   const translateX = useSharedValue(DRAWER_WIDTH);
   const backdropOpacity = useSharedValue(0);
@@ -117,14 +116,13 @@ export default function ProfileDrawer({ onNavigate, onLogout }: Props) {
             onPress={() => { closeProfileDrawer(); onNavigate?.('profile'); }}
             activeOpacity={0.85}
           >
-            {MOCK_USER.avatarUri ? (
-              <Image source={{ uri: MOCK_USER.avatarUri }} style={styles.avatar} />
-            ) : (
-              <View style={styles.avatarPlaceholder} />
-            )}
+            <Image
+              source={user?.avatarUrl ? { uri: user.avatarUrl } : PLACEHOLDER_AVATAR}
+              style={styles.avatar}
+            />
             <View style={styles.userText}>
-              <Text style={styles.userName}>{MOCK_USER.name}</Text>
-              <Text style={styles.userEmail} numberOfLines={1}>{MOCK_USER.email}</Text>
+              <Text style={styles.userName}>{displayName}</Text>
+              <Text style={styles.userEmail} numberOfLines={1}>{user?.email}</Text>
             </View>
           </TouchableOpacity>
 
@@ -207,12 +205,6 @@ const styles = StyleSheet.create({
     width: 52,
     height: 52,
     borderRadius: 26,
-  },
-  avatarPlaceholder: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: '#444',
   },
   userText: {
     flex: 1,

@@ -14,6 +14,7 @@ import { apolloClient } from './src/apollo/client'; // direct path (App.tsx is o
 import SplashScreen from './src/screens/onboarding/SplashScreen';
 import DevPreview from './src/screens/dev/DevPreview';
 import RootNavigator from './src/navigation/RootNavigator';
+import Toast from './src/components/ui/Toast';
 import { useUIStore } from './src/features/ui/store/uiStore';
 import { useAuthStore } from './src/features/auth/store/authStore';
 
@@ -54,6 +55,7 @@ export default function App() {
         ) : (
           <RootNavigator />
         )}
+        <Toast />
       </SafeAreaProvider>
     </ApolloProvider>
   );

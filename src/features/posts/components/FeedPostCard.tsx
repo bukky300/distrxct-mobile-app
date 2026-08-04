@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import { Heart, MessageCircle, Share2, Play } from 'lucide-react-native';
+import { View, Text, Image, TouchableOpacity, Alert, StyleSheet } from 'react-native';
+import { Heart, MessageCircle, Share2, Play, MoreHorizontal } from 'lucide-react-native';
 import { formatRelativeTime } from '@utils/formatters';
 import { useMarkPostHelpful } from '../hooks/useMarkPostHelpful';
+import { useDeletePost } from '../hooks/useDeletePost';
+import { useReportPost } from '../hooks/useReportPost';
+import { useAuthStore } from '@features/auth/store/authStore';
+import { useToastStore } from '@features/ui/store/toastStore';
 import CommentsSheet from './CommentsSheet';
-import type { Post } from '../types';
+import PostActionMenu from './PostActionMenu';
+import ReportPostSheet from './ReportPostSheet';
+import type { Post, ReportReason } from '../types';
 
 interface Props {
   post: Post;
@@ -17,13 +23,53 @@ function authorName(post: Post): string {
 }
 
 const BODY_COLLAPSED_LINES = 4;
+// Beat between the sheet's close animation and the toast's own Modal presenting,
+// so the two native modal layers don't fight for the presentation stack.
+const SHEET_CLOSE_DELAY_MS = 300;
 
 export default function FeedPostCard({ post }: Props) {
   const [commentsVisible, setCommentsVisible] = useState(false);
   const [commentCount, setCommentCount] = useState(post.comment_count);
   const [bodyExpanded, setBodyExpanded] = useState(false);
   const [bodyTruncatable, setBodyTruncatable] = useState(false);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [menuAnchor, setMenuAnchor] = useState({ top: 0, right: 0 });
+  const [reportVisible, setReportVisible] = useState(false);
   const { toggleHelpful } = useMarkPostHelpful();
+  const { deletePost } = useDeletePost();
+  const { reportPost, submitting: reportSubmitting } = useReportPost(post.id);
+  const showToast = useToastStore(s => s.showToast);
+  const currentUserId = useAuthStore(s => s.user?.id);
+  const isOwner = post.author?.id === currentUserId;
+
+  function openMenu(e: { nativeEvent: { pageY: number } }) {
+    setMenuAnchor({ top: e.nativeEvent.pageY + 4, right: 16 });
+    setMenuVisible(true);
+  }
+
+  function confirmDelete() {
+    Alert.alert('Delete post?', 'This action cannot be undone.', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Delete',
+        style: 'destructive',
+        onPress: async () => {
+          const result = await deletePost(post.id);
+          showToast(result.ok ? 'Post deleted.' : result.message, result.ok ? 'success' : 'error');
+        },
+      },
+    ]);
+  }
+
+  async function handleReportSubmit(reason: ReportReason, details: string) {
+    const result = await reportPost(reason, details);
+    if (result.ok) {
+      setReportVisible(false);
+      setTimeout(() => showToast('Report submitted. Thanks for letting us know.', 'success'), SHEET_CLOSE_DELAY_MS);
+    } else {
+      showToast(result.message, 'error');
+    }
+  }
 
   const video = post.media_metadata?.find(m => m.file_type === 'video');
   const imageMeta = post.media_metadata?.find(m => m.file_type !== 'video');
@@ -59,6 +105,14 @@ export default function FeedPostCard({ post }: Props) {
             )}
           </View>
         </View>
+        <TouchableOpacity
+          onPress={openMenu}
+          hitSlop={10}
+          activeOpacity={0.7}
+          style={styles.kebabBtn}
+        >
+          <MoreHorizontal size={18} color="#6B7280" strokeWidth={2} />
+        </TouchableOpacity>
       </View>
 
       {/* Title */}
@@ -142,6 +196,22 @@ export default function FeedPostCard({ post }: Props) {
         onClose={() => setCommentsVisible(false)}
         onCommentAdded={() => setCommentCount(c => c + 1)}
       />
+
+      <PostActionMenu
+        visible={menuVisible}
+        onClose={() => setMenuVisible(false)}
+        onReport={() => setReportVisible(true)}
+        onDelete={confirmDelete}
+        isOwner={isOwner}
+        anchor={menuAnchor}
+      />
+
+      <ReportPostSheet
+        visible={reportVisible}
+        onClose={() => setReportVisible(false)}
+        onSubmit={handleReportSubmit}
+        loading={reportSubmitting}
+      />
     </View>
   );
 }
@@ -170,6 +240,7 @@ const styles = StyleSheet.create({
   avatar: { width: 40, height: 40, borderRadius: 20 },
   avatarPlaceholder: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#D1D5DB' },
   userInfo: { flex: 1, gap: 2 },
+  kebabBtn: { padding: 4 },
   username: {
     fontSize: 14,
     fontWeight: '400',

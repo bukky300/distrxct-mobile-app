@@ -7,8 +7,12 @@ export interface CurrentUser {
   id: string;
   username: string;
   email: string;
+  firstName?: string | null;
+  lastName?: string | null;
   avatarUrl?: string | null;
   bio?: string | null;
+  /** "local" | "google" — drives the Password settings screen's OAuth branch */
+  provider?: string | null;
 }
 
 interface AuthTokens {

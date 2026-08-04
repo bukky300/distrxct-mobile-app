@@ -9,15 +9,14 @@ import {
 import { Bell, MessageSquare, Menu } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useUIStore } from '@features/ui/store/uiStore';
+import { useAuthStore } from '@features/auth/store/authStore';
+import { PLACEHOLDER_AVATAR } from '@features/friends/utils/placeholderAvatar';
 import { navigateToNotifications, navigateToMessages, navigateToProfile } from '@navigation/navigationRef';
 
-interface Props {
-  avatarUri?: string;
-}
-
-export default function TopNav({ avatarUri }: Props) {
+export default function TopNav() {
   const insets = useSafeAreaInsets();
   const openProfileDrawer = useUIStore(s => s.openProfileDrawer);
+  const avatarUrl = useAuthStore(s => s.user?.avatarUrl);
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
@@ -46,11 +45,7 @@ export default function TopNav({ avatarUri }: Props) {
 
         {/* Avatar */}
         <TouchableOpacity style={styles.raisedCircle} onPress={navigateToProfile} activeOpacity={0.8}>
-          {avatarUri ? (
-            <Image source={{ uri: avatarUri }} style={styles.avatar} />
-          ) : (
-            <View style={styles.avatarPlaceholder} />
-          )}
+          <Image source={avatarUrl ? { uri: avatarUrl } : PLACEHOLDER_AVATAR} style={styles.avatar} />
         </TouchableOpacity>
 
         {/* Hamburger */}
@@ -133,11 +128,5 @@ const styles = StyleSheet.create({
     width: 32,
     height: 32,
     borderRadius: 16,
-  },
-  avatarPlaceholder: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: '#D1D5DB',
   },
 });

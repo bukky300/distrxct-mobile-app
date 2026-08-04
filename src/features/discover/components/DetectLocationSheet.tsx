@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Modal,
   View,
@@ -6,6 +6,7 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -15,21 +16,33 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { X, Crosshair } from 'lucide-react-native';
+import * as Location from 'expo-location';
+import {
+  searchPlacePredictions,
+  getPlaceDetails,
+  reverseGeocode,
+  type PlacePrediction,
+  type ResolvedLocation,
+} from '@features/locations/services/googlePlaces';
 
 interface Props {
   visible: boolean;
   onClose: () => void;
-  onSelectLocation: (location: string) => void;
-  recentLocations?: string[];
+  onSelectLocation: (result: ResolvedLocation) => void;
 }
 
-export default function DetectLocationSheet({
-  visible,
-  onClose,
-  onSelectLocation,
-  recentLocations = [],
-}: Props) {
+const DEBOUNCE_MS = 400;
+
+export default function DetectLocationSheet({ visible, onClose, onSelectLocation }: Props) {
   const [query, setQuery] = useState('');
+  const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
+  const [recentLocations, setRecentLocations] = useState<ResolvedLocation[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [resolving, setResolving] = useState(false);
+  const [detecting, setDetecting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const [mounted, setMounted] = useState(visible);
   const scale = useSharedValue(0.92);
   const opacity = useSharedValue(0);
@@ -45,7 +58,7 @@ export default function DetectLocationSheet({
       });
       scale.value = withTiming(0.92, { duration: 160 });
     }
-  }, [visible]);
+  }, [visible, opacity, scale]);
 
   const cardStyle = useAnimatedStyle(() => ({
     opacity: opacity.value,
@@ -56,24 +69,91 @@ export default function DetectLocationSheet({
     opacity: opacity.value,
   }));
 
-  if (!mounted) return null;
+  function handleQueryChange(text: string) {
+    setQuery(text);
+    setError(null);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
 
-  function handleDetectCurrent() {
-    // Mocked — wire to expo-location when GPS support is added
-    onSelectLocation('Current location');
+    if (!text.trim()) {
+      setPredictions([]);
+      setSearching(false);
+      return;
+    }
+
+    setSearching(true);
+    debounceRef.current = setTimeout(async () => {
+      try {
+        const results = await searchPlacePredictions(text.trim());
+        setPredictions(results);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : 'Search failed');
+        setPredictions([]);
+      } finally {
+        setSearching(false);
+      }
+    }, DEBOUNCE_MS);
+  }
+
+  function commitSelection(result: ResolvedLocation) {
+    setRecentLocations(prev => [result, ...prev.filter(l => l.label !== result.label)].slice(0, 5));
     setQuery('');
+    setPredictions([]);
+    onSelectLocation(result);
+    handleClose();
+  }
+
+  async function handleSelectPrediction(prediction: PlacePrediction) {
+    setResolving(true);
+    setError(null);
+    try {
+      const result = await getPlaceDetails(prediction.place_id);
+      commitSelection(result);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Could not load that address');
+    } finally {
+      setResolving(false);
+    }
+  }
+
+  async function handleDetectCurrent() {
+    setDetecting(true);
+    setError(null);
+    try {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        setError('Location permission denied');
+        return;
+      }
+      const position = await Location.getCurrentPositionAsync({});
+      const result = await reverseGeocode(position.coords.latitude, position.coords.longitude);
+      commitSelection(result);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to detect location');
+    } finally {
+      setDetecting(false);
+    }
+  }
+
+  function handleClose() {
+    setQuery('');
+    setPredictions([]);
+    setError(null);
     onClose();
   }
 
+  if (!mounted) return null;
+
+  const showingSearchResults = query.trim().length > 0;
+
   return (
-    <Modal visible transparent animationType="none" onRequestClose={onClose} statusBarTranslucent>
+    <Modal visible transparent animationType="none" onRequestClose={handleClose} statusBarTranslucent>
       <Animated.View style={[StyleSheet.absoluteFill, styles.backdrop, backdropStyle]}>
-        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={onClose} />
+        <TouchableOpacity style={StyleSheet.absoluteFill} activeOpacity={1} onPress={handleClose} />
       </Animated.View>
 
       <View style={styles.centerWrap} pointerEvents="box-none">
         <Animated.View style={[styles.card, cardStyle]}>
-          <TouchableOpacity onPress={onClose} style={styles.closeBtn} activeOpacity={0.7}>
+          <TouchableOpacity onPress={handleClose} style={styles.closeBtn} activeOpacity={0.7}>
             <X size={16} color="#1A1A1A" strokeWidth={2} />
           </TouchableOpacity>
 
@@ -82,38 +162,66 @@ export default function DetectLocationSheet({
             placeholder="Search Location ..."
             placeholderTextColor="#9CA3AF"
             value={query}
-            onChangeText={setQuery}
+            onChangeText={handleQueryChange}
             returnKeyType="search"
           />
 
-          <Text style={styles.sectionTitle}>Detect Current Location</Text>
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-          <TouchableOpacity
-            style={styles.currentLocationRow}
-            onPress={handleDetectCurrent}
-            activeOpacity={0.7}
-          >
-            <Crosshair size={16} color="#2A5C40" strokeWidth={2} />
-            <Text style={styles.currentLocationText}>Current location</Text>
-          </TouchableOpacity>
-
-          <View style={styles.divider} />
-
-          <Text style={styles.sectionTitle}>Recent Locations</Text>
-
-          {recentLocations.length === 0 ? (
-            <Text style={styles.emptyText}>No recent locations</Text>
+          {showingSearchResults ? (
+            searching || resolving ? (
+              <ActivityIndicator style={styles.loadingIndicator} color="#2A5C40" />
+            ) : predictions.length > 0 ? (
+              predictions.map(p => (
+                <TouchableOpacity
+                  key={p.place_id}
+                  style={styles.recentRow}
+                  onPress={() => handleSelectPrediction(p)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.recentText}>{p.description}</Text>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <Text style={styles.emptyText}>No matches found</Text>
+            )
           ) : (
-            recentLocations.map(loc => (
+            <>
+              <Text style={styles.sectionTitle}>Detect Current Location</Text>
+
               <TouchableOpacity
-                key={loc}
-                style={styles.recentRow}
-                onPress={() => { onSelectLocation(loc); onClose(); }}
+                style={styles.currentLocationRow}
+                onPress={handleDetectCurrent}
                 activeOpacity={0.7}
+                disabled={detecting}
               >
-                <Text style={styles.recentText}>{loc}</Text>
+                {detecting ? (
+                  <ActivityIndicator size="small" color="#2A5C40" />
+                ) : (
+                  <Crosshair size={16} color="#2A5C40" strokeWidth={2} />
+                )}
+                <Text style={styles.currentLocationText}>Current location</Text>
               </TouchableOpacity>
-            ))
+
+              <View style={styles.divider} />
+
+              <Text style={styles.sectionTitle}>Recent Locations</Text>
+
+              {recentLocations.length === 0 ? (
+                <Text style={styles.emptyText}>No recent locations</Text>
+              ) : (
+                recentLocations.map(loc => (
+                  <TouchableOpacity
+                    key={loc.label}
+                    style={styles.recentRow}
+                    onPress={() => commitSelection(loc)}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={styles.recentText}>{loc.label}</Text>
+                  </TouchableOpacity>
+                ))
+              )}
+            </>
           )}
         </Animated.View>
       </View>
@@ -163,6 +271,15 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto_400Regular',
     marginTop: 28,
     marginBottom: 16,
+  },
+  errorText: {
+    fontSize: 13,
+    color: '#DC2626',
+    fontFamily: 'Roboto_400Regular',
+    marginBottom: 12,
+  },
+  loadingIndicator: {
+    paddingVertical: 16,
   },
   sectionTitle: {
     fontSize: 15,

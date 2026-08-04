@@ -34,8 +34,43 @@ interface UseLocationsOptions {
   sortBy?: string;
 }
 
+interface LocationNode {
+  id: string;
+  name: string;
+  description: string | null;
+  address: string | null;
+  latitude: number;
+  longitude: number;
+  category: string;
+  images: string[];
+  averageRating: number | null;
+  ratingCount: number;
+  createdAt: string;
+  createdBy: { id: string; username: string; avatarUrl: string | null };
+}
+
+interface LocationEdge {
+  node: LocationNode;
+  cursor: string;
+}
+
+interface GetLocationsData {
+  locations: {
+    edges: LocationEdge[];
+    pageInfo: { hasNextPage: boolean; endCursor: string | null };
+    totalCount: number;
+  };
+}
+
+interface GetLocationsVars {
+  first?: number;
+  after?: string;
+  filter?: Record<string, unknown>;
+  sortBy?: string;
+}
+
 export function useLocations({ filter, sortBy }: UseLocationsOptions = {}) {
-  const { data, loading, error, fetchMore, refetch } = useQuery(GET_LOCATIONS, {
+  const { data, loading, error, fetchMore, refetch } = useQuery<GetLocationsData, GetLocationsVars>(GET_LOCATIONS, {
     variables: { first: PAGINATION.LOCATIONS_PER_PAGE, filter, sortBy },
   });
 
@@ -43,7 +78,7 @@ export function useLocations({ filter, sortBy }: UseLocationsOptions = {}) {
     const pageInfo = data?.locations?.pageInfo;
     if (!pageInfo?.hasNextPage) return;
     fetchMore({
-      variables: { after: pageInfo.endCursor },
+      variables: { after: pageInfo.endCursor ?? undefined },
       updateQuery: (prev, { fetchMoreResult }) => {
         if (!fetchMoreResult) return prev;
         return {
@@ -57,7 +92,7 @@ export function useLocations({ filter, sortBy }: UseLocationsOptions = {}) {
   };
 
   return {
-    locations: data?.locations?.edges?.map((e: { node: unknown }) => e.node) ?? [],
+    locations: data?.locations?.edges?.map(e => e.node) ?? [],
     totalCount: data?.locations?.totalCount ?? 0,
     hasNextPage: data?.locations?.pageInfo?.hasNextPage ?? false,
     loading,

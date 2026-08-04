@@ -116,7 +116,7 @@ export default function DiscoverScreen() {
       <DetectLocationSheet
         visible={locationSheetVisible}
         onClose={() => setLocationSheetVisible(false)}
-        onSelectLocation={setLocation}
+        onSelectLocation={result => setLocation(result.label)}
       />
 
       <DiscoverFiltersSheet

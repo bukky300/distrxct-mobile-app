@@ -34,7 +34,8 @@ import ReviewFormSheet from '@features/reviews/components/ReviewFormSheet';
 import AiSuggestSheet from '@features/discover/components/AiSuggestSheet';
 import DetectLocationSheet from '@features/discover/components/DetectLocationSheet';
 import DiscoverFiltersSheet from '@features/discover/components/DiscoverFiltersSheet';
-import FollowersListSheet, { type FollowerRow } from '@features/friends/components/FollowersListSheet';
+import FollowersListSheet from '@features/friends/components/FollowersListSheet';
+import type { FriendUserSummary } from '@features/friends/types';
 
 // ─── Preview wrappers for modals/sheets ──────────────────────────────────────
 
@@ -193,7 +194,7 @@ function DetectLocationSheetPreview({ onDone }: { onDone: () => void }) {
       <DetectLocationSheet
         visible={open}
         onClose={() => { setOpen(false); onDone(); }}
-        onSelectLocation={loc => { alert(`Location: ${loc}`); setOpen(false); onDone(); }}
+        onSelectLocation={loc => { alert(`Location: ${loc.label}`); setOpen(false); onDone(); }}
       />
     </View>
   );
@@ -336,14 +337,13 @@ function ChatScreenPreview() {
   );
 }
 
-const PREVIEW_FOLLOWERS: FollowerRow[] = [
-  { id: 'f1', name: 'Kinsley Ekene', avatar: require('../../../assets/images/profile.png'), isFollowing: false },
-  { id: 'f2', name: 'Kinsley Ekene', avatar: require('../../../assets/images/reviewprofile.png'), isFollowing: true },
+const PREVIEW_FOLLOWERS: FriendUserSummary[] = [
+  { id: 'f1', username: 'kinsley', first_name: 'Kinsley', last_name: 'Ekene', profile_picture: null },
+  { id: 'f2', username: 'sampato', first_name: 'Sampato', last_name: '', profile_picture: null },
 ];
 
 function FollowersListSheetPreview({ onDone }: { onDone: () => void }) {
   const [open, setOpen] = useState(true);
-  const [followers, setFollowers] = useState(PREVIEW_FOLLOWERS);
   return (
     <View style={pw.bg}>
       {!open && (
@@ -354,10 +354,7 @@ function FollowersListSheetPreview({ onDone }: { onDone: () => void }) {
       <FollowersListSheet
         visible={open}
         onClose={() => { setOpen(false); onDone(); }}
-        followers={followers}
-        onToggleFollow={id => setFollowers(list =>
-          list.map(f => (f.id === id ? { ...f, isFollowing: !f.isFollowing } : f)),
-        )}
+        followers={PREVIEW_FOLLOWERS}
       />
     </View>
   );

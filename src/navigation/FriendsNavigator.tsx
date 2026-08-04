@@ -3,6 +3,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import type { FriendsStackParamList } from './types';
 import FriendsScreen from '@screens/friends/FriendsScreen';
 import FriendsProfileScreen from '@screens/friends/FriendsProfileScreen';
+import FollowersListScreen from '@screens/friends/FollowersListScreen';
 
 const Stack = createNativeStackNavigator<FriendsStackParamList>();
 
@@ -11,6 +12,7 @@ export default function FriendsNavigator() {
     <Stack.Navigator screenOptions={{ headerShown: false }}>
       <Stack.Screen name="FriendsHome" component={FriendsScreen} />
       <Stack.Screen name="FriendsProfile" component={FriendsProfileScreen} />
+      <Stack.Screen name="FollowersList" component={FollowersListScreen} />
     </Stack.Navigator>
   );
 }

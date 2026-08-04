@@ -6,20 +6,22 @@ import {
   TouchableOpacity,
   StyleSheet,
   FlatList,
-  Modal,
 } from 'react-native';
 import { X, ChevronDown } from 'lucide-react-native';
 import BottomSheet from '@components/ui/BottomSheet';
+import type { ReportReason } from '../types';
 
-const REPORT_REASONS = [
+const REPORT_REASONS: ReportReason[] = [
   'SPAM',
   'INAPPROPRIATE',
   'HARASSMENT',
-  'HATE SPEECH',
+  'HATE_SPEECH',
+  'VIOLENCE',
+  'NUDITY',
+  'FALSE_INFORMATION',
   'SCAM',
-] as const;
-
-type ReportReason = (typeof REPORT_REASONS)[number];
+  'OTHER',
+];
 
 interface Props {
   visible: boolean;
@@ -49,103 +51,85 @@ export default function ReportPostSheet({ visible, onClose, onSubmit, loading = 
   function reset() {
     setReason(null);
     setDetails('');
+    setReasonPickerVisible(false);
   }
 
   return (
-    <>
-      <BottomSheet visible={visible} onClose={handleClose}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.title}>Report Post</Text>
-          <TouchableOpacity onPress={handleClose} style={styles.closeBtn} activeOpacity={0.7}>
-            <X size={20} color="#1A1A1A" strokeWidth={2} />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.body}>
-          <Text style={styles.question}>Are you sure you want to report this post?</Text>
-
-          {/* Reason selector */}
-          <TouchableOpacity
-            style={styles.selector}
-            onPress={() => setReasonPickerVisible(true)}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.selectorText, reason && styles.selectorTextSelected]}>
-              {reason ?? 'Select reason'}
-            </Text>
-            <ChevronDown size={18} color="#6B7280" strokeWidth={2} />
-          </TouchableOpacity>
-
-          {/* Details */}
-          <TextInput
-            style={styles.textarea}
-            placeholder="Details..."
-            placeholderTextColor="#9CA3AF"
-            value={details}
-            onChangeText={setDetails}
-            multiline
-            numberOfLines={5}
-            textAlignVertical="top"
-            maxLength={500}
+    <BottomSheet visible={visible} onClose={handleClose}>
+      {reasonPickerVisible ? (
+        <>
+          <View style={pickerStyles.header}>
+            <Text style={pickerStyles.title}>Select Reasons</Text>
+          </View>
+          <FlatList
+            data={REPORT_REASONS}
+            keyExtractor={item => item}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[pickerStyles.item, reason === item && pickerStyles.itemSelected]}
+                onPress={() => { setReason(item); setReasonPickerVisible(false); }}
+                activeOpacity={0.65}
+              >
+                <Text style={[pickerStyles.itemText, reason === item && pickerStyles.itemTextSelected]}>
+                  {item.replace(/_/g, ' ')}
+                </Text>
+              </TouchableOpacity>
+            )}
+            contentContainerStyle={pickerStyles.list}
           />
-        </View>
+        </>
+      ) : (
+        <>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.title}>Report Post</Text>
+            <TouchableOpacity onPress={handleClose} style={styles.closeBtn} activeOpacity={0.7}>
+              <X size={20} color="#1A1A1A" strokeWidth={2} />
+            </TouchableOpacity>
+          </View>
 
-        {/* Submit */}
-        <TouchableOpacity
-          style={[styles.submitBtn, canSubmit && !loading && styles.submitBtnActive]}
-          onPress={handleSubmit}
-          activeOpacity={0.8}
-          disabled={loading}
-        >
-          <Text style={[styles.submitText, canSubmit && !loading && styles.submitTextActive]}>
-            {loading ? 'Submitting…' : 'Submit'}
-          </Text>
-        </TouchableOpacity>
-      </BottomSheet>
+          <View style={styles.body}>
+            <Text style={styles.question}>Are you sure you want to report this post?</Text>
 
-      {/* Reason picker overlay */}
-      <ReasonPickerSheet
-        visible={reasonPickerVisible}
-        onClose={() => setReasonPickerVisible(false)}
-        onSelect={r => { setReason(r); setReasonPickerVisible(false); }}
-        selected={reason}
-      />
-    </>
-  );
-}
+            {/* Reason selector */}
+            <TouchableOpacity
+              style={styles.selector}
+              onPress={() => setReasonPickerVisible(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={[styles.selectorText, reason && styles.selectorTextSelected]}>
+                {reason ? reason.replace(/_/g, ' ') : 'Select reason'}
+              </Text>
+              <ChevronDown size={18} color="#6B7280" strokeWidth={2} />
+            </TouchableOpacity>
 
-// ─── Reason picker ────────────────────────────────────────────────────────────
+            {/* Details */}
+            <TextInput
+              style={styles.textarea}
+              placeholder="Details..."
+              placeholderTextColor="#9CA3AF"
+              value={details}
+              onChangeText={setDetails}
+              multiline
+              numberOfLines={5}
+              textAlignVertical="top"
+              maxLength={500}
+            />
+          </View>
 
-interface ReasonPickerProps {
-  visible: boolean;
-  onClose: () => void;
-  onSelect: (reason: ReportReason) => void;
-  selected: ReportReason | null;
-}
-
-function ReasonPickerSheet({ visible, onClose, onSelect, selected }: ReasonPickerProps) {
-  return (
-    <BottomSheet visible={visible} onClose={onClose}>
-      <View style={pickerStyles.header}>
-        <Text style={pickerStyles.title}>Select Reasons</Text>
-      </View>
-      <FlatList
-        data={REPORT_REASONS}
-        keyExtractor={item => item}
-        renderItem={({ item }) => (
+          {/* Submit */}
           <TouchableOpacity
-            style={[pickerStyles.item, selected === item && pickerStyles.itemSelected]}
-            onPress={() => onSelect(item)}
-            activeOpacity={0.65}
+            style={[styles.submitBtn, canSubmit && !loading && styles.submitBtnActive]}
+            onPress={handleSubmit}
+            activeOpacity={0.8}
+            disabled={loading}
           >
-            <Text style={[pickerStyles.itemText, selected === item && pickerStyles.itemTextSelected]}>
-              {item}
+            <Text style={[styles.submitText, canSubmit && !loading && styles.submitTextActive]}>
+              {loading ? 'Submitting…' : 'Submit'}
             </Text>
           </TouchableOpacity>
-        )}
-        contentContainerStyle={pickerStyles.list}
-      />
+        </>
+      )}
     </BottomSheet>
   );
 }

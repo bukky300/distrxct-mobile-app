@@ -8,7 +8,7 @@ export interface FAQGroup {
   items: FAQItem[];
 }
 
-// Placeholder copy — swap for real content once a FAQ query/CMS is wired up.
+// Ported from the web app's src/mock/faqData.js — same content, same grouping.
 export const FAQ_DATA: FAQGroup[] = [
   {
     category: 'General Questions',
@@ -21,36 +21,51 @@ export const FAQ_DATA: FAQGroup[] = [
       {
         question: 'Do I need an account to use the site?',
         answer:
-          'You can browse most businesses and reviews without an account, but you\'ll need to sign up to write reviews, post activity, or follow friends.',
+          "You can browse businesses and read reviews without an account, but you'll need to create one to write reviews, upload photos, save favorites, or interact with other users.",
       },
       {
         question: 'Is the app free to use?',
-        answer: 'Yes, Distrxct is completely free for everyone to browse, review, and connect with friends.',
+        answer:
+          'Yes, the app and website are free for users. Some businesses may pay for advertising or premium features, but regular users are not charged.',
       },
       {
         question: 'Where can I contact support?',
-        answer: 'You can reach our support team any time at support@distrxct.com from the Help section in Settings.',
+        answer: 'You can reach us via the contact form or email support@distrxct.com.',
       },
     ],
   },
   {
-    category: 'Reviews & Ratings',
+    category: 'Reviews and Ratings',
     items: [
       {
         question: 'How are ratings calculated?',
-        answer: 'Ratings are the average of all star ratings left by users who reviewed that business.',
+        answer:
+          'Ratings are based on user reviews, typically using a 1 — 5 star scale. The overall score is usually an average, sometimes adjusted by factors like review quality or recency.',
       },
       {
         question: 'Can anyone write a review?',
-        answer: 'Any signed-in, verified user can write a review for a business they\'ve visited.',
+        answer:
+          "Yes, any registered user can write a review as long as it follows the platform's content guidelines and is based on a genuine experience.",
       },
       {
         question: 'Can businesses remove bad reviews?',
-        answer: 'Businesses cannot remove reviews, but they can report reviews that violate our community guidelines for our team to investigate.',
+        answer:
+          'No, businesses cannot remove reviews simply because they are negative. Reviews are only removed if they violate platform policies (e.g., spam, hate speech, or fake content).',
+      },
+    ],
+  },
+  {
+    category: 'Searching & Recommendations',
+    items: [
+      {
+        question: 'How do search results work?',
+        answer:
+          'Search results are based on factors like location, relevance, ratings, popularity, and sometimes personalization (such as your past activity).',
       },
       {
         question: 'Can I filter results?',
-        answer: 'Yes, use the filters on the Discover tab to narrow results by category, rating, distance, and more.',
+        answer:
+          'Yes. You can filter by things like rating, distance, price range, hours, amenities, or specific categories depending on the business type.',
       },
     ],
   },
@@ -59,11 +74,12 @@ export const FAQ_DATA: FAQGroup[] = [
     items: [
       {
         question: 'Can I stay anonymous when writing reviews?',
-        answer: 'Reviews are posted under your username, but you can choose not to include your full name or photo in your profile.',
+        answer:
+          'Your real name is usually not required, but reviews are tied to your user profile. Other users can see your username and review history.',
       },
       {
         question: 'Can I delete my account or reviews?',
-        answer: 'Yes, you can delete individual reviews any time, or permanently delete your account from Settings > Account.',
+        answer: 'Yes, Distrxct allows you to delete your account or remove individual reviews through account settings.',
       },
     ],
   },
@@ -72,7 +88,7 @@ export const FAQ_DATA: FAQGroup[] = [
     items: [
       {
         question: 'Does paying affect reviews or ratings?',
-        answer: 'No, paid promotions never influence review content or star ratings — sponsored listings are always clearly labeled.',
+        answer: 'No. Paid advertising does not change review scores or give businesses the ability to edit or delete user reviews.',
       },
     ],
   },
@@ -81,19 +97,21 @@ export const FAQ_DATA: FAQGroup[] = [
     items: [
       {
         question: 'What should I do if I see a fake or inappropriate review?',
-        answer: 'Tap the "···" menu on the review and select Report so our team can look into it.',
-      },
-      {
-        question: 'Why is the "Continue" button not working when I\'m trying to complete my business registration?',
-        answer: 'Make sure all required fields are filled in and you have a stable internet connection, then try again. If it persists, contact support.',
+        answer: 'You can report the review using the reporting or flagging option. The platform will review it for policy violations.',
       },
       {
         question: 'Why does the app need my location?',
-        answer: 'Location helps us show you nearby businesses and more relevant recommendations. You can change this any time in your device settings.',
+        answer:
+          'Location access helps show nearby businesses, provide accurate directions, and improve local search results. You can usually adjust this in your device settings.',
+      },
+      {
+        question: 'Why is the "Continue" button not working when I\'m trying to complete my business registration?',
+        answer:
+          'If the "Continue" button isn\'t showing, it\'s usually because the address hasn\'t been properly selected. Distrxct uses a smart address system powered by Google. This means that as you type your address, suggestions will appear. You must select one of the suggested addresses (don\'t just type and move on). If no suggestion is selected, the system won\'t recognize the address, and the Continue button will remain disabled.',
       },
       {
         question: 'How can I contact customer support?',
-        answer: 'Email us at support@distrxct.com or use the Help section in Settings — we typically respond within 24 hours.',
+        answer: 'Distrxct offers a help center and FAQ page. You can also send us an email at support@distrxct.com for additional support.',
       },
     ],
   },

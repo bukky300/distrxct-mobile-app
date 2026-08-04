@@ -53,6 +53,7 @@ export type DiscoverStackParamList = {
 export type FriendsStackParamList = {
   FriendsHome: undefined;
   FriendsProfile: { friendId: string };
+  FollowersList: { friendId: string; friendName?: string };
 };
 
 export type LocationsStackParamList = {

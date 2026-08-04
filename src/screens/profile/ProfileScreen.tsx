@@ -1,77 +1,55 @@
 import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
-import { Settings, Signature, Users } from 'lucide-react-native';
+import { Settings, Signature, Users, Star, Handshake } from 'lucide-react-native';
 import TopNav from '@components/layout/TopNav';
-import FollowersListSheet, { type FollowerRow } from '@features/friends/components/FollowersListSheet';
-import ReviewListItem from '@features/discover/components/ReviewListItem';
+import FollowersListSheet from '@features/friends/components/FollowersListSheet';
+import FriendListSkeleton from '@features/friends/components/FriendListSkeleton';
+import EmptyState from '@components/ui/EmptyState';
 import BusinessCard from '@features/discover/components/BusinessCard';
-import { MOCK_BUSINESSES } from '@features/discover/data/mockBusinesses';
-import type { BusinessReview } from '@features/discover/types';
-import PostCard, { type PostData } from '@features/posts/components/PostCard';
+import PostCard from '@features/posts/components/PostCard';
+import { useFriendUser } from '@features/friends/hooks/useFriendUser';
+import { useFollowersAndFollowing } from '@features/friends/hooks/useFollowersAndFollowing';
+import { useFriendActivity } from '@features/friends/hooks/useFriendActivity';
+import { useFriendCollections } from '@features/friends/hooks/useFriendCollections';
+import { useMyReviews } from '@features/profile/hooks/useMyReviews';
+import { useDeletePost } from '@features/posts/hooks/useDeletePost';
+import { useAuthStore } from '@features/auth/store/authStore';
+import { useToastStore } from '@features/ui/store/toastStore';
+import { PLACEHOLDER_AVATAR } from '@features/friends/utils/placeholderAvatar';
+import { fullName } from '@features/friends/utils/formatName';
 import { navigateToSettings, navigateToBusiness } from '@navigation/navigationRef';
 
 type ProfileTab = 'reviews' | 'activity' | 'collections';
 
-// Placeholder data — replace with real auth/profile state
-const MOCK_PROFILE = {
-  name: 'Kinsley Ekene',
-  address: 'Market Way, Uyo, Akwa Ibom, 520108, Nigeria',
-  avatar: require('../../../assets/images/profile.png'),
-};
-
-const MOCK_REVIEWS: BusinessReview[] = [
-  {
-    id: 'r1',
-    user: { name: 'Sampato' },
-    timestamp: '23 hrs ago',
-    rating: 2,
-    comment: 'Lorem ipsum dolor sit amet consectetur. Odio sed neque risus cras lacus',
-    helpfulCount: 0,
-  },
-  {
-    id: 'r2',
-    user: { name: 'Sampato' },
-    timestamp: '23 hrs ago',
-    rating: 2,
-    comment: 'Lorem ipsum dolor sit amet consectetur. Odio sed neque risus cras lacus',
-    helpfulCount: 0,
-  },
-];
-
-const ACTIVITY_POST: PostData = {
-  id: 'a1',
-  type: 'review',
-  user: { name: 'Kingsley' },
-  timestamp: '5 hrs ago',
-  reviewedBusiness: 'ABC hotels',
-  location: 'Lagos, Nigeria',
-  rating: 3,
-  body: 'Amazing experience! The staff were friendly and the service was top notch. Will definitely come back',
-  imageUri: 'https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?w=800',
-  helpfulCount: 21,
-  commentCount: 5,
-  isOwner: true,
-};
-
-const FOLLOWERS: FollowerRow[] = [
-  {
-    id: 'f1',
-    name: 'Kinsley Ekene',
-    avatar: require('../../../assets/images/reviewprofile.png'),
-    isFollowing: false,
-  },
-];
-
 export default function ProfileScreen() {
+  const currentUserId = useAuthStore(s => s.user?.id);
+  const showToast = useToastStore(s => s.showToast);
+
   const [activeTab, setActiveTab] = useState<ProfileTab>('activity');
   const [followersVisible, setFollowersVisible] = useState(false);
-  const [followers, setFollowers] = useState(FOLLOWERS);
 
-  function toggleFollower(id: string) {
-    setFollowers(list =>
-      list.map(f => (f.id === id ? { ...f, isFollowing: !f.isFollowing } : f)),
+  const { friend: profile, loading: profileLoading } = useFriendUser(currentUserId);
+  const { followers, loading: followersLoading } = useFollowersAndFollowing(currentUserId);
+  const { reviews, loading: reviewsLoading } = useMyReviews();
+  const { posts, loading: activityLoading } = useFriendActivity(currentUserId);
+  const { businesses, loading: collectionLoading } = useFriendCollections(currentUserId);
+  const { deletePost } = useDeletePost();
+
+  async function handleDeletePost(postId: string) {
+    const result = await deletePost(postId);
+    if (!result.ok) showToast(result.message, 'error');
+  }
+
+  if (profileLoading || !profile) {
+    return (
+      <View style={styles.root}>
+        <TopNav />
+        <FriendListSkeleton count={1} />
+      </View>
     );
   }
+
+  const name = fullName(profile.first_name, profile.last_name);
 
   return (
     <View style={styles.root}>
@@ -82,10 +60,15 @@ export default function ProfileScreen() {
 
         <View style={styles.profileCard}>
           <View style={styles.identityRow}>
-            <Image source={MOCK_PROFILE.avatar} style={styles.avatar} />
+            <Image
+              source={profile.profile_picture?.thumbnail ? { uri: profile.profile_picture.thumbnail } : PLACEHOLDER_AVATAR}
+              style={styles.avatar}
+            />
             <View style={styles.identityInfo}>
-              <Text style={styles.name}>{MOCK_PROFILE.name}</Text>
-              <Text style={styles.address} numberOfLines={2}>{MOCK_PROFILE.address}</Text>
+              <Text style={styles.name}>{name}</Text>
+              {profile.location?.formatted_address ? (
+                <Text style={styles.address} numberOfLines={2}>{profile.location.formatted_address}</Text>
+              ) : null}
               <View style={styles.statsRow}>
                 <TouchableOpacity
                   style={styles.statBtn}
@@ -144,27 +127,66 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.section}>
-          {activeTab === 'reviews' && (
-            <View style={styles.reviewsList}>
-              {MOCK_REVIEWS.map(review => (
-                <ReviewListItem key={review.id} review={review} />
-              ))}
-            </View>
-          )}
+          {activeTab === 'reviews' &&
+            (reviewsLoading ? (
+              <FriendListSkeleton count={2} />
+            ) : reviews.length === 0 ? (
+              <EmptyState icon="star-outline" title="No reviews yet." />
+            ) : (
+              <View style={styles.reviewsList}>
+                {reviews.map(review => (
+                  <View key={review.id} style={styles.reviewCard}>
+                    {review.content_title ? <Text style={styles.reviewTitle}>{review.content_title}</Text> : null}
+                    <View style={styles.ratingRow}>
+                      {Array.from({ length: 5 }, (_, i) => (
+                        <Star
+                          key={i}
+                          size={14}
+                          color={i < review.rating ? '#FACC15' : '#D1D5DB'}
+                          fill={i < review.rating ? '#FACC15' : 'none'}
+                          strokeWidth={1.5}
+                        />
+                      ))}
+                    </View>
+                    {review.content_message ? <Text style={styles.reviewMessage}>{review.content_message}</Text> : null}
+                    <View style={styles.helpfulRow}>
+                      <Handshake size={16} color="#9CA3AF" strokeWidth={1.8} />
+                      <Text style={styles.helpfulCount}>{review.help_count}</Text>
+                    </View>
+                  </View>
+                ))}
+              </View>
+            ))}
 
-          {activeTab === 'activity' && <PostCard post={ACTIVITY_POST} />}
+          {activeTab === 'activity' &&
+            (activityLoading ? (
+              <FriendListSkeleton count={2} />
+            ) : posts.length === 0 ? (
+              <EmptyState icon="reader-outline" title="No activity yet." />
+            ) : (
+              <View style={{ gap: 12 }}>
+                {posts.map(post => (
+                  <PostCard key={post.id} post={post} onDelete={handleDeletePost} />
+                ))}
+              </View>
+            ))}
 
-          {activeTab === 'collections' && (
-            <View>
-              {MOCK_BUSINESSES.map(business => (
-                <BusinessCard
-                  key={business.id}
-                  business={business}
-                  onPress={() => navigateToBusiness(business.id)}
-                />
-              ))}
-            </View>
-          )}
+          {activeTab === 'collections' &&
+            (collectionLoading ? (
+              <FriendListSkeleton count={2} />
+            ) : businesses.length === 0 ? (
+              <EmptyState icon="bookmark-outline" title="No businesses yet." />
+            ) : (
+              <View>
+                {businesses.map(business => (
+                  <BusinessCard
+                    key={business.id}
+                    business={business}
+                    onPress={() => navigateToBusiness(business.id)}
+                  />
+                ))}
+              </View>
+            ))}
         </View>
       </ScrollView>
 
@@ -172,7 +194,6 @@ export default function ProfileScreen() {
         visible={followersVisible}
         onClose={() => setFollowersVisible(false)}
         followers={followers}
-        onToggleFollow={toggleFollower}
       />
     </View>
   );
@@ -299,5 +320,37 @@ const styles = StyleSheet.create({
   },
   reviewsList: {
     gap: 12,
+  },
+  reviewCard: {
+    borderWidth: 1,
+    borderColor: '#F0F0F0',
+    borderRadius: 16,
+    padding: 16,
+    gap: 8,
+  },
+  reviewTitle: {
+    fontSize: 15,
+    fontFamily: 'Roboto_700Bold',
+    color: '#1A1A1A',
+  },
+  ratingRow: {
+    flexDirection: 'row',
+    gap: 2,
+  },
+  reviewMessage: {
+    fontSize: 14,
+    color: '#4B5563',
+    fontFamily: 'Roboto_400Regular',
+    lineHeight: 20,
+  },
+  helpfulRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  helpfulCount: {
+    fontSize: 13,
+    color: '#9CA3AF',
+    fontFamily: 'Roboto_400Regular',
   },
 });
