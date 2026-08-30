@@ -25,7 +25,7 @@ const DWELL_MS = 1000;
 
 export default function HomeScreen() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
-  const openPostSheet = useUIStore(s => s.openPostSheet);
+  const openCreateSheet = useUIStore(s => s.openCreateSheet);
   const { posts, loading, refreshing, fetchingMore, error, loadMore, onRefresh } = useFeed('HOME');
   const { markSeen } = useMarkPostsSeen();
 
@@ -128,7 +128,7 @@ export default function HomeScreen() {
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>No activities yet</Text>
             <Text style={styles.emptySubtitle}>Be the first to share something with the community.</Text>
-            <TouchableOpacity style={styles.primaryBtn} onPress={openPostSheet} activeOpacity={0.85}>
+            <TouchableOpacity style={styles.primaryBtn} onPress={() => openCreateSheet('post')} activeOpacity={0.85}>
               <Text style={styles.primaryBtnText}>Create a post</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.refreshLink} onPress={onRefresh} activeOpacity={0.7}>

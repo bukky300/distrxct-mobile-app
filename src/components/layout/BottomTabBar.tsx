@@ -18,7 +18,7 @@ const TAB_ICONS: Record<
 
 export default function BottomTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
-  const openPostSheet = useUIStore(s => s.openPostSheet);
+  const openCreateSheet = useUIStore(s => s.openCreateSheet);
 
   const routes = state.routes; // [Home, Activity, Discover, Friends]
   const leftRoutes  = routes.slice(0, 2);
@@ -63,10 +63,10 @@ export default function BottomTabBar({ state, descriptors, navigation }: BottomT
       <View style={styles.fabWrapper}>
         <TouchableOpacity
           style={styles.fab}
-          onPress={openPostSheet}
+          onPress={() => openCreateSheet()}
           activeOpacity={0.85}
           accessibilityRole="button"
-          accessibilityLabel="Create new post"
+          accessibilityLabel="Create new post or review"
         >
           <Plus size={26} color="#FFFFFF" strokeWidth={2.5} />
         </TouchableOpacity>

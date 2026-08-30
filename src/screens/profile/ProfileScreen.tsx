@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, Image, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { useRoute, type RouteProp } from '@react-navigation/native';
 import { Settings, Signature, Users, Star, Handshake } from 'lucide-react-native';
 import TopNav from '@components/layout/TopNav';
 import FollowersListSheet from '@features/friends/components/FollowersListSheet';
@@ -18,14 +19,17 @@ import { useToastStore } from '@features/ui/store/toastStore';
 import { PLACEHOLDER_AVATAR } from '@features/friends/utils/placeholderAvatar';
 import { fullName } from '@features/friends/utils/formatName';
 import { navigateToSettings, navigateToBusiness } from '@navigation/navigationRef';
+import type { HomeStackParamList } from '@navigation/types';
 
 type ProfileTab = 'reviews' | 'activity' | 'collections';
+type ProfileRoute = RouteProp<HomeStackParamList, 'Profile'>;
 
 export default function ProfileScreen() {
   const currentUserId = useAuthStore(s => s.user?.id);
   const showToast = useToastStore(s => s.showToast);
+  const route = useRoute<ProfileRoute>();
 
-  const [activeTab, setActiveTab] = useState<ProfileTab>('activity');
+  const [activeTab, setActiveTab] = useState<ProfileTab>(route.params?.initialTab ?? 'activity');
   const [followersVisible, setFollowersVisible] = useState(false);
 
   const { friend: profile, loading: profileLoading } = useFriendUser(currentUserId);
@@ -66,8 +70,8 @@ export default function ProfileScreen() {
             />
             <View style={styles.identityInfo}>
               <Text style={styles.name}>{name}</Text>
-              {profile.location?.formatted_address ? (
-                <Text style={styles.address} numberOfLines={2}>{profile.location.formatted_address}</Text>
+              {profile.location?.formattedAddress ? (
+                <Text style={styles.address} numberOfLines={2}>{profile.location.formattedAddress}</Text>
               ) : null}
               <View style={styles.statsRow}>
                 <TouchableOpacity

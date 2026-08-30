@@ -28,8 +28,8 @@ function FriendCard({ friend, onPress }: Props) {
         />
         <View style={styles.info}>
           <Text style={styles.name} numberOfLines={1}>{name}</Text>
-          {friend.location?.formatted_address ? (
-            <Text style={styles.location} numberOfLines={1}>{friend.location.formatted_address}</Text>
+          {friend.location?.formattedAddress ? (
+            <Text style={styles.location} numberOfLines={1}>{friend.location.formattedAddress}</Text>
           ) : null}
           <View style={styles.statsRow}>
             <Users size={14} color="#9CA3AF" strokeWidth={2} />

@@ -1,29 +1,56 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
-import { MapPin, Star, LocateFixed } from 'lucide-react-native';
+import { MapPin, Star, Heart } from 'lucide-react-native';
+import { useToggleBookmark } from '../hooks/useToggleBookmark';
+import { useToastStore } from '@features/ui/store/toastStore';
 import type { Business } from '../types';
 
 interface Props {
   business: Business;
   onPress?: () => void;
-  onPressLocate?: () => void;
 }
 
-export default function BusinessCard({ business, onPress, onPressLocate }: Props) {
+export default function BusinessCard({ business, onPress }: Props) {
   const filledStars = Math.round(business.rating);
+  const [bookmarked, setBookmarked] = useState(business.isBookmarked);
+  const { toggleBookmark, submitting } = useToggleBookmark();
+  const showToast = useToastStore(s => s.showToast);
+
+  useEffect(() => {
+    setBookmarked(business.isBookmarked);
+  }, [business.isBookmarked]);
+
+  async function handleToggleBookmark() {
+    if (submitting) return;
+    const nextValue = !bookmarked;
+    setBookmarked(nextValue); // optimistic
+    try {
+      const confirmed = await toggleBookmark(business.id, bookmarked);
+      setBookmarked(confirmed);
+      if (confirmed) showToast('Saved to your collection', 'success');
+    } catch (e) {
+      setBookmarked(bookmarked); // revert
+      showToast(e instanceof Error ? e.message : 'Could not update your collection.', 'error');
+    }
+  }
 
   return (
     <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.85}>
       <View style={styles.imageWrapper}>
         <Image source={business.coverImage} style={styles.image} resizeMode="cover" />
         <TouchableOpacity
-          style={styles.locateBtn}
-          onPress={onPressLocate}
+          style={styles.bookmarkBtn}
+          onPress={handleToggleBookmark}
           activeOpacity={0.7}
           accessibilityRole="button"
-          accessibilityLabel={`View ${business.name} on map`}
+          accessibilityLabel={bookmarked ? `Remove ${business.name} from your collection` : `Save ${business.name} to your collection`}
         >
-          <LocateFixed size={16} color="#1A1A1A" strokeWidth={2} />
+          <Heart
+            size={16}
+            color={bookmarked ? '#DC2626' : '#1A1A1A'}
+            fill={bookmarked ? '#DC2626' : 'none'}
+            strokeWidth={2}
+          />
         </TouchableOpacity>
       </View>
 
@@ -82,7 +109,7 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  locateBtn: {
+  bookmarkBtn: {
     position: 'absolute',
     top: 10,
     right: 10,

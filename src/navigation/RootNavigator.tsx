@@ -12,6 +12,7 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function RootNavigator() {
   const isAuthenticated = useAuthStore(s => s.isAuthenticated);
+  const hasOnboarded = useAuthStore(s => s.hasOnboarded);
 
   return (
     <NavigationContainer ref={navigationRef} linking={linking}>
@@ -19,7 +20,9 @@ export default function RootNavigator() {
         {isAuthenticated ? (
           <Stack.Screen name="App" component={AppNavigator} />
         ) : (
-          <Stack.Screen name="Auth" component={AuthStack} />
+          <Stack.Screen name="Auth">
+            {() => <AuthStack initialRouteName={hasOnboarded ? 'Login' : 'Welcome'} />}
+          </Stack.Screen>
         )}
       </Stack.Navigator>
     </NavigationContainer>

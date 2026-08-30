@@ -7,11 +7,11 @@ import ActivityScreen from '@screens/activity/ActivityScreen';
 import DiscoverNavigator from './DiscoverNavigator';
 import FriendsNavigator from './FriendsNavigator';
 import ProfileDrawer from '@features/profile/components/ProfileDrawer';
-import PostActivitySheet from '@features/posts/components/PostActivitySheet';
+import CreateActivitySheet from '@components/layout/CreateActivitySheet';
 import BottomTabBar from '@components/layout/BottomTabBar';
 import { useUIStore } from '@features/ui/store/uiStore';
 import { useAuth } from '@features/auth/hooks/useAuth';
-import { navigateToProfile, navigateToSettings, navigateToHelp } from './navigationRef';
+import { navigateToProfile, navigateToSettings, navigateToHelp, navigateToMyBusiness, navigateToCollections } from './navigationRef';
 
 const Tab = createBottomTabNavigator<AppTabParamList>();
 
@@ -22,7 +22,7 @@ interface Props {
 }
 
 export default function AppNavigator({ initialRouteName }: Props) {
-  const { postSheetOpen, closePostSheet } = useUIStore();
+  const { createSheetOpen, createSheetMode, closeCreateSheet } = useUIStore();
   const { logout } = useAuth();
 
   return (
@@ -44,14 +44,18 @@ export default function AppNavigator({ initialRouteName }: Props) {
           if (key === 'profile') navigateToProfile();
           if (key === 'settings') navigateToSettings();
           if (key === 'help') navigateToHelp();
+          if (key === 'business') navigateToMyBusiness();
+          if (key === 'collections') navigateToCollections();
         }}
         onLogout={logout}
       />
-      <PostActivitySheet
-        visible={postSheetOpen}
-        onClose={closePostSheet}
-        // Hook point for the feed once it exists: refetch/cache-update with the new post here.
+      <CreateActivitySheet
+        visible={createSheetOpen}
+        initialMode={createSheetMode}
+        onClose={closeCreateSheet}
+        // Hook point for the feed once it exists: refetch/cache-update with the new post/review here.
         onPosted={() => {}}
+        onReviewed={() => {}}
       />
     </>
   );

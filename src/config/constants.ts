@@ -6,6 +6,9 @@ export const STORAGE_KEYS = {
   REFRESH_TOKEN: 'distrxct.refresh_token',
   ACCESS_TOKEN_EXPIRES_AT: 'distrxct.access_token_expires_at',
   USER: 'distrxct.user',
+  // Set once, the first time this device ever completes a login/signup — survives
+  // logout, so AuthStack knows to skip straight to Login instead of Welcome again.
+  HAS_ONBOARDED: 'distrxct.has_onboarded',
 } as const;
 
 export const PAGINATION = {

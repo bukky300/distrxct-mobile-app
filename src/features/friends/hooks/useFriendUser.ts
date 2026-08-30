@@ -25,7 +25,7 @@ const GET_USER = gql`
         last_name
       }
       location {
-        formatted_address
+        formattedAddress
       }
     }
   }

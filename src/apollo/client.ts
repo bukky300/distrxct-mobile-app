@@ -30,7 +30,7 @@ const httpLink = new HttpLink({
 export const apolloClient = new ApolloClient({
   link: from([errorLink, authLink, httpLink]),
   cache,
-  connectToDevTools: __DEV__,
+  devtools: { enabled: __DEV__ },
   defaultOptions: {
     watchQuery: {
       fetchPolicy: 'cache-and-network',

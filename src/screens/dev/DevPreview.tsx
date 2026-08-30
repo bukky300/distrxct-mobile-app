@@ -21,21 +21,47 @@ import AppNavigator from '@navigation/AppNavigator';
 import AuthStack from '@navigation/AuthStack';
 import SettingsNavigator from '@navigation/SettingsNavigator';
 import MessagesNavigator from '@navigation/MessagesNavigator';
-import { navigationRef, navigateToProfile, navigateToSettings, navigateToMessages } from '@navigation/navigationRef';
+import { navigationRef, navigateToProfile, navigateToSettings, navigateToMessages, navigateToMyBusiness } from '@navigation/navigationRef';
 
 // ─── New components ───────────────────────────────────────────────────────────
 import HomeSkeleton from '@components/ui/HomeSkeleton';
 import PostActionMenu from '@features/posts/components/PostActionMenu';
-import PostActivitySheet from '@features/posts/components/PostActivitySheet';
+import CreateActivitySheet from '@components/layout/CreateActivitySheet';
 import ReportPostSheet from '@features/posts/components/ReportPostSheet';
 import TagBusinessSheet from '@features/posts/components/TagBusinessSheet';
-import AddReviewSheet from '@features/reviews/components/AddReviewSheet';
 import ReviewFormSheet from '@features/reviews/components/ReviewFormSheet';
 import AiSuggestSheet from '@features/discover/components/AiSuggestSheet';
 import DetectLocationSheet from '@features/discover/components/DetectLocationSheet';
 import DiscoverFiltersSheet from '@features/discover/components/DiscoverFiltersSheet';
 import FollowersListSheet from '@features/friends/components/FollowersListSheet';
 import type { FriendUserSummary } from '@features/friends/types';
+import EditBusinessDetailSheet from '@features/business/components/EditBusinessDetailSheet';
+import EditAboutSheet from '@features/business/components/EditAboutSheet';
+import EditHoursSheet from '@features/business/components/EditHoursSheet';
+import EditLogoSheet from '@features/business/components/EditLogoSheet';
+import EditGallerySheet from '@features/business/components/EditGallerySheet';
+import BusinessTypePickerSheet from '@features/business/components/BusinessTypePickerSheet';
+import type { Business } from '@features/business/types';
+
+const MOCK_BUSINESS: Business = {
+  id: 'mock-business-1',
+  name: 'Kilimajaro Kitchen',
+  description:
+    "The RealReal is the world's largest online marketplace for authenticated, resale luxury goods, with more than 34.4 million members.",
+  instagram_url: null,
+  tictok_url: null,
+  whatsapp_number: '+234 8907 6523',
+  email: 'kilikitchen@gmail.com',
+  timezone: 'Africa/Lagos',
+  open_hour: '09:00:00',
+  close_hour: '18:00:00',
+  owner_id: 'mock-owner-1',
+  logo: null,
+  media_url: [],
+  location: { id: 'mock-location-1', formattedAddress: 'Road 4, trans-Amadi industrial layout, Rivers state.' },
+  store_type: { id: 'mock-type-1', name: 'Food, Drinks & Dining' },
+  store_categories: [{ id: 'mock-cat-1', name: 'Buka / Local Eats' }],
+};
 
 // ─── Preview wrappers for modals/sheets ──────────────────────────────────────
 
@@ -63,20 +89,21 @@ function PostActionMenuPreview({ onDone }: { onDone: () => void }) {
   );
 }
 
-function PostActivitySheetPreview({ onDone }: { onDone: () => void }) {
+function CreateActivitySheetPreview({ onDone }: { onDone: () => void }) {
   const [open, setOpen] = useState(true);
   return (
     <View style={pw.bg}>
-      <Text style={pw.hint}>Post Activity sheet</Text>
+      <Text style={pw.hint}>Create Activity sheet (Post / Review choice)</Text>
       {!open && (
         <TouchableOpacity style={pw.fab} onPress={() => setOpen(true)} activeOpacity={0.85}>
           <Plus size={26} color="#fff" />
         </TouchableOpacity>
       )}
-      <PostActivitySheet
+      <CreateActivitySheet
         visible={open}
         onClose={() => { setOpen(false); onDone(); }}
         onPosted={post => { alert(`Post: ${post.post_title}`); setOpen(false); onDone(); }}
+        onReviewed={review => { alert(`Review: ${review.content_title}`); setOpen(false); onDone(); }}
       />
     </View>
   );
@@ -118,24 +145,6 @@ function TagBusinessSheetPreview({ onDone }: { onDone: () => void }) {
   );
 }
 
-function AddReviewSheetPreview({ onDone }: { onDone: () => void }) {
-  const [open, setOpen] = useState(true);
-  return (
-    <View style={pw.bg}>
-      {!open && (
-        <TouchableOpacity style={pw.reopenBtn} onPress={() => setOpen(true)}>
-          <Text style={pw.reopenText}>Open Add Review sheet</Text>
-        </TouchableOpacity>
-      )}
-      <AddReviewSheet
-        visible={open}
-        onClose={() => { setOpen(false); onDone(); }}
-        onReviewSubmit={data => { alert(`Review submitted for ${data.businessId}`); setOpen(false); onDone(); }}
-      />
-    </View>
-  );
-}
-
 function ReviewFormSheetPreview({ onDone }: { onDone: () => void }) {
   const [open, setOpen] = useState(true);
   const mockBusiness = {
@@ -160,6 +169,120 @@ function ReviewFormSheetPreview({ onDone }: { onDone: () => void }) {
         onBack={() => { setOpen(false); onDone(); }}
         onSubmit={data => { alert(`Stars: ${data.rating}`); setOpen(false); onDone(); }}
       />
+    </View>
+  );
+}
+
+function EditBusinessDetailSheetPreview({ onDone }: { onDone: () => void }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <View style={pw.bg}>
+      {!open && (
+        <TouchableOpacity style={pw.reopenBtn} onPress={() => setOpen(true)}>
+          <Text style={pw.reopenText}>Open Edit Business Detail sheet</Text>
+        </TouchableOpacity>
+      )}
+      <EditBusinessDetailSheet
+        visible={open}
+        business={MOCK_BUSINESS}
+        onClose={() => { setOpen(false); onDone(); }}
+        onSaved={b => { alert(`Saved: ${b.name}`); setOpen(false); onDone(); }}
+        onEditLocation={() => alert('Would hand off to DetectLocationSheet')}
+      />
+    </View>
+  );
+}
+
+function EditAboutSheetPreview({ onDone }: { onDone: () => void }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <View style={pw.bg}>
+      {!open && (
+        <TouchableOpacity style={pw.reopenBtn} onPress={() => setOpen(true)}>
+          <Text style={pw.reopenText}>Open Edit About sheet</Text>
+        </TouchableOpacity>
+      )}
+      <EditAboutSheet
+        visible={open}
+        business={MOCK_BUSINESS}
+        onClose={() => { setOpen(false); onDone(); }}
+        onSaved={() => { setOpen(false); onDone(); }}
+      />
+    </View>
+  );
+}
+
+function EditHoursSheetPreview({ onDone }: { onDone: () => void }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <View style={pw.bg}>
+      {!open && (
+        <TouchableOpacity style={pw.reopenBtn} onPress={() => setOpen(true)}>
+          <Text style={pw.reopenText}>Open Edit Hours sheet</Text>
+        </TouchableOpacity>
+      )}
+      <EditHoursSheet
+        visible={open}
+        business={MOCK_BUSINESS}
+        onClose={() => { setOpen(false); onDone(); }}
+        onSaved={() => { setOpen(false); onDone(); }}
+      />
+    </View>
+  );
+}
+
+function EditLogoSheetPreview({ onDone }: { onDone: () => void }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <View style={pw.bg}>
+      {!open && (
+        <TouchableOpacity style={pw.reopenBtn} onPress={() => setOpen(true)}>
+          <Text style={pw.reopenText}>Open Edit Logo sheet</Text>
+        </TouchableOpacity>
+      )}
+      <EditLogoSheet
+        visible={open}
+        business={MOCK_BUSINESS}
+        onClose={() => { setOpen(false); onDone(); }}
+        onSaved={() => { setOpen(false); onDone(); }}
+      />
+    </View>
+  );
+}
+
+function EditGallerySheetPreview({ onDone }: { onDone: () => void }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <View style={pw.bg}>
+      {!open && (
+        <TouchableOpacity style={pw.reopenBtn} onPress={() => setOpen(true)}>
+          <Text style={pw.reopenText}>Open Edit Gallery sheet</Text>
+        </TouchableOpacity>
+      )}
+      <EditGallerySheet
+        visible={open}
+        business={MOCK_BUSINESS}
+        onClose={() => { setOpen(false); onDone(); }}
+        onSaved={() => { setOpen(false); onDone(); }}
+      />
+    </View>
+  );
+}
+
+function BusinessTypePickerSheetPreview({ onDone }: { onDone: () => void }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <View style={pw.bg}>
+      {!open && (
+        <TouchableOpacity style={pw.reopenBtn} onPress={() => setOpen(true)}>
+          <Text style={pw.reopenText}>Open Business Type Picker</Text>
+        </TouchableOpacity>
+      )}
+      {open && (
+        <BusinessTypePickerSheet
+          onSelect={selection => { alert(`${selection.storeTypeName} / ${selection.categoryName}`); setOpen(false); onDone(); }}
+        />
+      )}
     </View>
   );
 }
@@ -308,6 +431,19 @@ function SettingsFlowPreview() {
   );
 }
 
+function BusinessFlowPreview() {
+  useEffect(() => {
+    const timer = setTimeout(() => navigateToMyBusiness(), 50);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <NavigationContainer independent ref={navigationRef}>
+      <AppNavigator initialRouteName="Home" />
+    </NavigationContainer>
+  );
+}
+
 function NotificationsPreview() {
   return (
     <NavigationContainer independent>
@@ -427,11 +563,17 @@ const SCREENS: { label: string; group: string; component: React.ComponentType<an
   { group: 'Messages',   label: 'Messages Flow (List + Chat)', component: MessagesFlowPreview },
   { group: 'Messages',   label: 'Chat Screen',          component: ChatScreenPreview },
   { group: 'Posts',      label: 'Post Action Menu',     component: PostActionMenuPreview },
-  { group: 'Posts',      label: 'Post Activity Sheet',  component: PostActivitySheetPreview },
+  { group: 'Posts',      label: 'Create Activity Sheet', component: CreateActivitySheetPreview },
   { group: 'Posts',      label: 'Report Post Sheet',    component: ReportPostSheetPreview },
   { group: 'Posts',      label: 'Tag Business Sheet',   component: TagBusinessSheetPreview },
-  { group: 'Reviews',    label: 'Add Review Sheet',     component: AddReviewSheetPreview },
   { group: 'Reviews',    label: 'Review Form Sheet',    component: ReviewFormSheetPreview },
+  { group: 'Business',   label: 'Business Flow (Create + Dashboard)', component: BusinessFlowPreview },
+  { group: 'Business',   label: 'Edit Business Detail Sheet', component: EditBusinessDetailSheetPreview },
+  { group: 'Business',   label: 'Edit About Sheet',     component: EditAboutSheetPreview },
+  { group: 'Business',   label: 'Edit Hours Sheet',     component: EditHoursSheetPreview },
+  { group: 'Business',   label: 'Edit Logo Sheet',      component: EditLogoSheetPreview },
+  { group: 'Business',   label: 'Edit Gallery Sheet',   component: EditGallerySheetPreview },
+  { group: 'Business',   label: 'Business Type Picker', component: BusinessTypePickerSheetPreview },
 ];
 
 const GROUPS = [...new Set(SCREENS.map(s => s.group))];

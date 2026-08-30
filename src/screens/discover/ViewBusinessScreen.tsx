@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -18,12 +19,15 @@ import {
   Phone,
   PencilLine,
 } from 'lucide-react-native';
+import EmptyState from '@components/ui/EmptyState';
 import BusinessImageCarousel from '@features/discover/components/BusinessImageCarousel';
 import ReviewSummaryCard from '@features/discover/components/ReviewSummaryCard';
 import ReviewListItem from '@features/discover/components/ReviewListItem';
 import ReviewFormSheet from '@features/reviews/components/ReviewFormSheet';
-import { getBusinessById } from '@features/discover/data/mockBusinesses';
-import type { BusinessReview } from '@features/discover/types';
+import { useBusinessDetail } from '@features/discover/hooks/useBusinessDetail';
+import { useToggleBookmark } from '@features/discover/hooks/useToggleBookmark';
+import { useCreateReview } from '@features/reviews/hooks/useCreateReview';
+import { useToastStore } from '@features/ui/store/toastStore';
 import type { DiscoverStackParamList } from '@navigation/types';
 
 type Nav = NativeStackNavigationProp<DiscoverStackParamList>;
@@ -33,29 +37,95 @@ export default function ViewBusinessScreen() {
   const navigation = useNavigation<Nav>();
   const { params } = useRoute<Route>();
   const insets = useSafeAreaInsets();
+  const showToast = useToastStore(s => s.showToast);
 
-  const business = getBusinessById(params.businessId);
+  const { business, loading, error, refetch } = useBusinessDetail(params.businessId);
+  const { toggleBookmark } = useToggleBookmark();
+  const { createReview, submitting: submittingReview } = useCreateReview();
 
   const [descExpanded, setDescExpanded] = useState(false);
   const [activeTab, setActiveTab] = useState<'reviews' | 'activity'>('reviews');
   const [reviewSheetVisible, setReviewSheetVisible] = useState(false);
-  const [reviews, setReviews] = useState<BusinessReview[]>(business?.reviews ?? []);
+  const [bookmarked, setBookmarked] = useState(false);
 
-  if (!business) return null;
+  useEffect(() => {
+    setBookmarked(business?.isBookmarked ?? false);
+  }, [business?.isBookmarked]);
 
-  const handleSubmitReview = (data: { businessId: string; rating: number; title: string; body: string }) => {
-    setReviews(prev => [
-      {
-        id: `local-${Date.now()}`,
-        user: { name: 'You' },
-        timestamp: 'Just now',
-        rating: data.rating,
-        comment: data.title ? `${data.title}\n${data.body}` : data.body,
-        helpfulCount: 0,
-      },
-      ...prev,
-    ]);
-    setReviewSheetVisible(false);
+  if (loading && !business) {
+    return (
+      <View style={styles.root}>
+        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+          <TouchableOpacity onPress={navigation.goBack} style={styles.backBtn} activeOpacity={0.7}>
+            <ChevronLeft size={24} color="#1A1A1A" strokeWidth={2} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator color="#2A5C40" />
+        </View>
+      </View>
+    );
+  }
+
+  if (!business && error) {
+    return (
+      <View style={styles.root}>
+        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+          <TouchableOpacity onPress={navigation.goBack} style={styles.backBtn} activeOpacity={0.7}>
+            <ChevronLeft size={24} color="#1A1A1A" strokeWidth={2} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.loadingWrap}>
+          <Text style={styles.emptyText}>Couldn&apos;t load this business.</Text>
+          <Text style={styles.errorDetail}>{error.message}</Text>
+          <TouchableOpacity style={styles.retryBtn} onPress={() => refetch()} activeOpacity={0.85}>
+            <Text style={styles.retryBtnText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  if (!business) {
+    return (
+      <View style={styles.root}>
+        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+          <TouchableOpacity onPress={navigation.goBack} style={styles.backBtn} activeOpacity={0.7}>
+            <ChevronLeft size={24} color="#1A1A1A" strokeWidth={2} />
+          </TouchableOpacity>
+        </View>
+        <EmptyState
+          icon="storefront-outline"
+          title="Business details are being updated"
+          message="Check back soon."
+        />
+      </View>
+    );
+  }
+
+  async function handleToggleBookmark() {
+    const next = !bookmarked;
+    setBookmarked(next); // optimistic
+    try {
+      const confirmed = await toggleBookmark(business!.id, bookmarked);
+      setBookmarked(confirmed);
+      showToast(confirmed ? 'Saved to your collection' : 'Removed from your collection', 'success');
+    } catch (e) {
+      setBookmarked(bookmarked);
+      showToast(e instanceof Error ? e.message : 'Could not update your collection.', 'error');
+    }
+  }
+
+  const handleSubmitReview = async (data: { businessId: string; rating: number; title: string; body: string }) => {
+    try {
+      await createReview({ storeId: data.businessId, rating: data.rating, title: data.title, content: data.body });
+      showToast('Your review has been posted.', 'success');
+      refetch();
+    } catch (e) {
+      showToast(e instanceof Error ? e.message : "Couldn't post your review. Please try again.", 'error');
+    } finally {
+      setReviewSheetVisible(false);
+    }
   };
 
   return (
@@ -67,9 +137,9 @@ export default function ViewBusinessScreen() {
         </TouchableOpacity>
 
         <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.headerAction} activeOpacity={0.7}>
+          <TouchableOpacity style={styles.headerAction} onPress={handleToggleBookmark} activeOpacity={0.7}>
             <Text style={styles.headerActionText}>Collection</Text>
-            <Bookmark size={16} color="#1A1A1A" strokeWidth={1.8} />
+            <Bookmark size={16} color={bookmarked ? '#DC2626' : '#1A1A1A'} fill={bookmarked ? '#DC2626' : 'none'} strokeWidth={1.8} />
           </TouchableOpacity>
           <TouchableOpacity style={styles.headerAction} activeOpacity={0.7}>
             <Text style={styles.headerActionText}>Share</Text>
@@ -155,11 +225,15 @@ export default function ViewBusinessScreen() {
 
         <View style={styles.section}>
           {activeTab === 'reviews' ? (
-            <View style={{ gap: 12 }}>
-              {reviews.map(review => (
-                <ReviewListItem key={review.id} review={review} />
-              ))}
-            </View>
+            business.reviews.length === 0 ? (
+              <Text style={styles.emptyText}>No reviews yet</Text>
+            ) : (
+              <View style={styles.reviewsList}>
+                {business.reviews.map(review => (
+                  <ReviewListItem key={review.id} review={review} />
+                ))}
+              </View>
+            )
           ) : (
             <Text style={styles.emptyText}>No activity yet</Text>
           )}
@@ -189,6 +263,7 @@ export default function ViewBusinessScreen() {
         onClose={() => setReviewSheetVisible(false)}
         onBack={() => setReviewSheetVisible(false)}
         onSubmit={handleSubmitReview}
+        loading={submittingReview}
       />
     </View>
   );
@@ -196,6 +271,26 @@ export default function ViewBusinessScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#FFFFFF' },
+  loadingWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 24 },
+  errorDetail: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    fontFamily: 'Roboto_400Regular',
+    textAlign: 'center',
+  },
+  retryBtn: {
+    marginTop: 8,
+    backgroundColor: '#2A5C40',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+  },
+  retryBtnText: {
+    color: '#FFFFFF',
+    fontFamily: 'Roboto_400Bold',
+    fontSize: 14,
+  },
+  reviewsList: { gap: 12 },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

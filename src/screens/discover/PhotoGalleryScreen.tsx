@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, FlatList, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, Image, TouchableOpacity, FlatList, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
 import { useNavigation, useRoute, type RouteProp } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronLeft } from 'lucide-react-native';
-import { getBusinessById } from '@features/discover/data/mockBusinesses';
+import { useBusinessDetail } from '@features/discover/hooks/useBusinessDetail';
 import type { DiscoverStackParamList } from '@navigation/types';
 
 type Route = RouteProp<DiscoverStackParamList, 'PhotoGallery'>;
@@ -17,8 +17,33 @@ export default function PhotoGalleryScreen() {
   const { params } = useRoute<Route>();
   const insets = useSafeAreaInsets();
 
-  const business = getBusinessById(params.businessId);
-  if (!business) return null;
+  const { business, loading, error, refetch } = useBusinessDetail(params.businessId);
+
+  if (!business) {
+    return (
+      <View style={styles.root}>
+        <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
+          <TouchableOpacity onPress={navigation.goBack} style={styles.backBtn} activeOpacity={0.7}>
+            <ChevronLeft size={24} color="#1A1A1A" strokeWidth={2} />
+          </TouchableOpacity>
+        </View>
+        <View style={styles.centerWrap}>
+          {loading ? (
+            <ActivityIndicator color="#2A5C40" />
+          ) : error ? (
+            <>
+              <Text style={styles.emptyText}>Couldn&apos;t load these photos.</Text>
+              <TouchableOpacity style={styles.retryBtn} onPress={() => refetch()} activeOpacity={0.85}>
+                <Text style={styles.retryBtnText}>Retry</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <Text style={styles.emptyText}>Business not found.</Text>
+          )}
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.root}>
@@ -47,6 +72,25 @@ export default function PhotoGalleryScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: '#FFFFFF' },
+  centerWrap: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 10, padding: 24 },
+  emptyText: {
+    fontSize: 14,
+    color: '#9CA3AF',
+    fontFamily: 'Roboto_400Regular',
+    textAlign: 'center',
+  },
+  retryBtn: {
+    marginTop: 8,
+    backgroundColor: '#2A5C40',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 24,
+  },
+  retryBtnText: {
+    color: '#FFFFFF',
+    fontFamily: 'Roboto_400Bold',
+    fontSize: 14,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

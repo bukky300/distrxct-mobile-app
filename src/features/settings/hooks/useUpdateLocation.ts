@@ -7,7 +7,7 @@ const GET_USER_LOCATION = gql`
     user(user_id: $userId) {
       id
       location {
-        formatted_address
+        formattedAddress
       }
     }
   }
@@ -16,12 +16,12 @@ const GET_USER_LOCATION = gql`
 // Initial display value only — the main useFullUser query doesn't include location,
 // matching web's separate location flow (desktop-location-section.jsx's own fetch).
 export function useCurrentLocation(userId: string | undefined) {
-  const { data, loading } = useQuery<{ user: { location: { formatted_address: string | null } | null } | null }>(
+  const { data, loading } = useQuery<{ user: { location: { formattedAddress: string | null } | null } | null }>(
     GET_USER_LOCATION,
     { variables: { userId }, skip: !userId, fetchPolicy: 'network-only' },
   );
 
-  return { formattedAddress: data?.user?.location?.formatted_address ?? null, loading };
+  return { formattedAddress: data?.user?.location?.formattedAddress ?? null, loading };
 }
 
 const UPDATE_LOCATION = gql`

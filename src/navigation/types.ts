@@ -23,9 +23,10 @@ export type AppTabParamList = {
 
 export type HomeStackParamList = {
   HomeHome: undefined;
-  Profile: undefined;
+  Profile: { initialTab?: 'reviews' | 'activity' | 'collections' } | undefined;
   Settings: undefined;
   Messages: undefined;
+  Business: undefined;
 };
 
 export type MessagesStackParamList = {

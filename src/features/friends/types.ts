@@ -17,7 +17,7 @@ export interface FriendUserSummary {
 // entries, only the single-user detail query does. Keep everything beyond the
 // summary optional and let callers fall back gracefully (matches web's own behavior).
 export interface FriendUser extends FriendUserSummary {
-  location?: { formatted_address: string | null } | null;
+  location?: { formattedAddress: string | null } | null;
   followers?: FriendUserSummary[];
   following?: FriendUserSummary[];
   reviewsCount?: number;

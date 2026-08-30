@@ -12,7 +12,6 @@ import { X, ChevronLeft, ImagePlay, Video as VideoIcon } from 'lucide-react-nati
 import * as ImagePicker from 'expo-image-picker';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import BottomSheet from '@components/ui/BottomSheet';
 import BusinessPickerList from './BusinessPickerList';
 import { useCreatePost } from '../hooks/useCreatePost';
 import { useToastStore } from '@features/ui/store/toastStore';
@@ -26,7 +25,7 @@ import {
 import type { Post, StoreOption } from '../types';
 
 interface Props {
-  visible: boolean;
+  onBack: () => void;
   onClose: () => void;
   onPosted?: (post: Post) => void;
 }
@@ -38,7 +37,10 @@ const DEFAULT_VALUES: PostFormValues = {
   tag: null,
 };
 
-export default function PostActivitySheet({ visible, onClose, onPosted }: Props) {
+// Pure content, no Modal/BottomSheet of its own — embedded inside CreateActivitySheet's
+// single sheet (nesting a second RN Modal here locks the app up, same issue documented
+// in BusinessPickerList.tsx).
+export default function PostForm({ onBack, onClose, onPosted }: Props) {
   const [tagSheetVisible, setTagSheetVisible] = useState(false);
   const { createPost, submitting, uploadProgress } = useCreatePost();
   const showToast = useToastStore(s => s.showToast);
@@ -150,7 +152,7 @@ export default function PostActivitySheet({ visible, onClose, onPosted }: Props)
 
   if (tagSheetVisible) {
     return (
-      <BottomSheet visible={visible} onClose={handleClose}>
+      <>
         {/* Header */}
         <View style={styles.header}>
           <TouchableOpacity
@@ -165,14 +167,17 @@ export default function PostActivitySheet({ visible, onClose, onPosted }: Props)
         </View>
 
         <BusinessPickerList onSelect={handleSelectStore} />
-      </BottomSheet>
+      </>
     );
   }
 
   return (
-    <BottomSheet visible={visible} onClose={handleClose}>
+    <>
       {/* Header */}
       <View style={styles.header}>
+        <TouchableOpacity onPress={onBack} style={styles.closeBtn} activeOpacity={0.7}>
+          <ChevronLeft size={20} color="#1A1A1A" strokeWidth={2} />
+        </TouchableOpacity>
         <Text style={styles.title}>Post Activity</Text>
         <TouchableOpacity onPress={handleClose} style={styles.closeBtn} activeOpacity={0.7}>
           <X size={20} color="#1A1A1A" strokeWidth={2} />
@@ -286,7 +291,7 @@ export default function PostActivitySheet({ visible, onClose, onPosted }: Props)
             {postLabel}
           </Text>
         </TouchableOpacity>
-    </BottomSheet>
+    </>
   );
 }
 

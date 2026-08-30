@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { X, ChevronLeft, Star, MapPin, Store } from 'lucide-react-native';
 import BottomSheet from '@components/ui/BottomSheet';
-import type { ReviewBusiness } from './AddReviewSheet';
+import type { ReviewBusiness } from '../types';
 
 interface Props {
   visible: boolean;

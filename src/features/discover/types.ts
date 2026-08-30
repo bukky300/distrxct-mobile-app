@@ -29,6 +29,7 @@ export interface Business {
   address: string;
   rating: number;
   ratingCount: number;
+  isBookmarked: boolean;
   /** Card cover image shown in the Discover list */
   coverImage: ImageSourcePropType;
   /** Small square logo shown on the business detail header */

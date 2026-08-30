@@ -15,7 +15,7 @@ import BusinessCard from '@features/discover/components/BusinessCard';
 import AiSuggestSheet from '@features/discover/components/AiSuggestSheet';
 import DetectLocationSheet from '@features/discover/components/DetectLocationSheet';
 import DiscoverFiltersSheet, { type DiscoverFilters } from '@features/discover/components/DiscoverFiltersSheet';
-import { MOCK_BUSINESSES } from '@features/discover/data/mockBusinesses';
+import { useDiscoverBusinesses } from '@features/discover/hooks/useDiscoverBusinesses';
 import type { DiscoverStackParamList } from '@navigation/types';
 
 type Nav = NativeStackNavigationProp<DiscoverStackParamList>;
@@ -29,9 +29,10 @@ export default function DiscoverScreen() {
   const [location, setLocation] = useState('Lagos, Nigeria');
   const [searchQuery, setSearchQuery] = useState('');
 
+  const { businesses: allBusinesses } = useDiscoverBusinesses();
   const businesses = searchQuery.trim()
-    ? MOCK_BUSINESSES.filter(b => b.name.toLowerCase().includes(searchQuery.toLowerCase()))
-    : MOCK_BUSINESSES;
+    ? allBusinesses.filter(b => b.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : allBusinesses;
 
   function handleApplyFilters(_filters: DiscoverFilters) {
     // wire to real filtering once API is connected
@@ -50,7 +51,6 @@ export default function DiscoverScreen() {
           <BusinessCard
             business={item}
             onPress={() => navigation.navigate('ViewBusiness', { businessId: item.id })}
-            onPressLocate={() => setLocationSheetVisible(true)}
           />
         )}
         ListHeaderComponent={

@@ -15,6 +15,12 @@ export function navigateToProfile() {
   }
 }
 
+export function navigateToCollections() {
+  if (navigationRef.isReady()) {
+    appNavigationRef.navigate('Home', { screen: 'Profile', params: { initialTab: 'collections' } } as never);
+  }
+}
+
 export function navigateToSettings() {
   if (navigationRef.isReady()) {
     appNavigationRef.navigate('Home', { screen: 'Settings', params: { screen: 'SettingsHome' } } as never);
@@ -48,5 +54,13 @@ export function navigateToDiscover() {
 export function navigateToBusiness(businessId: string) {
   if (navigationRef.isReady()) {
     appNavigationRef.navigate('Discover', { screen: 'ViewBusiness', params: { businessId } } as never);
+  }
+}
+
+// Distinct from navigateToBusiness above (which views any business by id) — this opens
+// the current user's own business management flow (Create form / dashboard).
+export function navigateToMyBusiness() {
+  if (navigationRef.isReady()) {
+    appNavigationRef.navigate('Home', { screen: 'Business' } as never);
   }
 }

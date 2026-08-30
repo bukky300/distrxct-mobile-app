@@ -1,6 +1,6 @@
 import { API_URL, STORAGE_KEYS } from '@config/constants';
 import { storage } from '@utils/storage';
-import { useAuthStore } from '@/features/auth/store/authStore';
+import { forceLogout } from './sessionExpiry';
 
 const REFRESH_TOKEN_MUTATION = `
   mutation RefreshToken($refresh_token: String!) {
@@ -69,7 +69,7 @@ export async function ensureValidAccessToken(): Promise<string | null> {
 
   const newAccessToken = await refreshPromise;
   if (!newAccessToken) {
-    await useAuthStore.getState().logout();
+    await forceLogout();
     return null;
   }
   return newAccessToken;
